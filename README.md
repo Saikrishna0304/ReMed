@@ -1,6 +1,6 @@
-# Remend
+# ReMed
 
-Remend is a personal health assistant Android application designed to help users manage their medications and stay hydrated.
+ReMed is a personal health assistant Android application designed to help users manage their medications and stay hydrated.
 
 ## Features
 
