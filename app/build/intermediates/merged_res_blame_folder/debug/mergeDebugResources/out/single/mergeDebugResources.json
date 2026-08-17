@@ -1,0 +1,34 @@
+[
+    {
+        "merged": "com.example.remed.app-debug-58:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.example.remed.app-main-60:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.example.remed.app-debug-58:/drawable_ic_splash_logo.xml.flat",
+        "source": "com.example.remed.app-main-60:/drawable/ic_splash_logo.xml"
+    },
+    {
+        "merged": "com.example.remed.app-debug-58:/drawable_ic_water_drop.xml.flat",
+        "source": "com.example.remed.app-main-60:/drawable/ic_water_drop.xml"
+    },
+    {
+        "merged": "com.example.remed.app-debug-58:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.example.remed.app-main-60:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.example.remed.app-debug-58:/xml_backup_rules.xml.flat",
+        "source": "com.example.remed.app-main-60:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.example.remed.app-debug-58:/xml_data_extraction_rules.xml.flat",
+        "source": "com.example.remed.app-main-60:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.example.remed.app-debug-58:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.example.remed.app-main-60:/mipmap-anydpi-v26/ic_launcher.xml"
+    },
+    {
+        "merged": "com.example.remed.app-debug-58:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.example.remed.app-main-60:/drawable/ic_launcher_foreground.xml"
+    }
+]
