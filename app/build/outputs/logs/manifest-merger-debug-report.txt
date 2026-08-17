@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:2:1-42:12
-INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:2:1-42:12
-INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:2:1-42:12
-INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:2:1-42:12
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:2:1-43:12
+INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:2:1-43:12
+INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:2:1-43:12
+INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:2:1-43:12
 MERGED from [androidx.work:work-runtime-ktx:2.9.0] C:\Users\saikr\.gradle\caches\9.3.1\transforms\9668b94fa0edbd5367c2a98e8a29865c\workspace\transformed\work-runtime-ktx-2.9.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.work:work-runtime:2.9.0] C:\Users\saikr\.gradle\caches\9.3.1\transforms\29b1fad5c97a1cbec63e4c90c2eef30d\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:17:1-145:12
 MERGED from [com.google.android.gms:play-services-mlkit-text-recognition:19.0.0] C:\Users\saikr\.gradle\caches\9.3.1\transforms\9c6df1af38dd6eaad235a04ef891a196\workspace\transformed\jetified-play-services-mlkit-text-recognition-19.0.0\AndroidManifest.xml:2:1-8:12
@@ -96,6 +96,7 @@ MERGED from [org.tensorflow:tensorflow-lite:2.13.0] C:\Users\saikr\.gradle\cache
 MERGED from [org.tensorflow:tensorflow-lite-api:2.13.0] C:\Users\saikr\.gradle\caches\9.3.1\transforms\5a1309f69fe867784416c503a98d1d75\workspace\transformed\jetified-tensorflow-lite-api-2.13.0\AndroidManifest.xml:2:1-11:12
 MERGED from [com.google.android.odml:image:1.0.0-beta1] C:\Users\saikr\.gradle\caches\9.3.1\transforms\69f43d18842dc5f9e6497606d01be9db\workspace\transformed\jetified-image-1.0.0-beta1\AndroidManifest.xml:2:1-9:12
 	package
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:4:5-32
 		INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml
 	android:versionName
 		INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml
@@ -106,30 +107,30 @@ MERGED from [com.google.android.odml:image:1.0.0-beta1] C:\Users\saikr\.gradle\c
 	xmlns:android
 		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:2:11-69
 uses-feature#android.hardware.camera
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:5:5-7:36
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:6:5-8:36
 	android:required
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:7:9-33
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:8:9-33
 	android:name
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:6:9-47
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:7:9-47
 uses-permission#android.permission.CAMERA
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:9:5-65
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:10:5-65
 	android:name
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:9:22-62
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:10:22-62
 uses-permission#android.permission.POST_NOTIFICATIONS
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:10:5-77
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:11:5-77
 	android:name
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:10:22-74
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:11:22-74
 uses-permission#android.permission.SCHEDULE_EXACT_ALARM
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:11:5-79
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:12:5-79
 	android:name
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:11:22-76
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:12:22-76
 uses-permission#android.permission.VIBRATE
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:12:5-66
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:13:5-66
 	android:name
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:12:22-63
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:13:22-63
 application
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:14:5-40:19
-INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:14:5-40:19
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:15:5-41:19
+INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:15:5-41:19
 MERGED from [androidx.work:work-runtime:2.9.0] C:\Users\saikr\.gradle\caches\9.3.1\transforms\29b1fad5c97a1cbec63e4c90c2eef30d\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:28:5-143:19
 MERGED from [androidx.work:work-runtime:2.9.0] C:\Users\saikr\.gradle\caches\9.3.1\transforms\29b1fad5c97a1cbec63e4c90c2eef30d\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:28:5-143:19
 MERGED from [com.google.android.gms:play-services-mlkit-text-recognition-common:19.0.0] C:\Users\saikr\.gradle\caches\9.3.1\transforms\e98f2e43c71402a64ddb65fb5b8e764f\workspace\transformed\jetified-play-services-mlkit-text-recognition-common-19.0.0\AndroidManifest.xml:8:5-16:19
@@ -177,49 +178,49 @@ MERGED from [com.google.android.odml:image:1.0.0-beta1] C:\Users\saikr\.gradle\c
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.12.0] C:\Users\saikr\.gradle\caches\9.3.1\transforms\eeeece672fd435336004664f2bacc45f\workspace\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:22:9-35
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:23:9-35
 	android:label
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:21:9-41
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:22:9-41
 	android:fullBackupContent
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:18:9-54
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:19:9-54
 	android:roundIcon
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:20:9-54
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:21:9-54
 	tools:targetApi
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:24:9-29
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:25:9-29
 	android:icon
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:19:9-43
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:20:9-43
 	android:allowBackup
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:16:9-35
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:17:9-35
 	android:theme
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:23:9-43
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:24:9-43
 	android:dataExtractionRules
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:17:9-65
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:18:9-65
 	android:name
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:15:9-41
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:16:9-41
 activity#com.example.remed.MainActivity
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:26:9-34:20
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:27:9-35:20
 	android:exported
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:28:13-36
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:29:13-36
 	android:theme
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:29:13-56
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:30:13-56
 	android:name
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:27:13-41
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:28:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:30:13-33:29
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:31:13-34:29
 action#android.intent.action.MAIN
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:31:17-69
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:32:17-69
 	android:name
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:31:25-66
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:32:25-66
 category#android.intent.category.LAUNCHER
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:32:17-77
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:33:17-77
 	android:name
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:32:27-74
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:33:27-74
 receiver#com.example.remed.notifications.WaterReminderReceiver
-ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:36:9-38:40
+ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:37:9-39:40
 	android:exported
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:38:13-37
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:39:13-37
 	android:name
-		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:37:13-64
+		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:38:13-64
 uses-sdk
 INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml
