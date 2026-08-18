@@ -21,8 +21,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.LocalPharmacy
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -31,6 +38,7 @@ import androidx.compose.material3.DrawerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
@@ -44,12 +52,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlinx.coroutines.launch
 import com.example.remed.data.Medication
 import com.example.remed.data.WaterLog
 import com.example.remed.ui.MedicationViewModel
@@ -69,6 +85,8 @@ fun DashboardScreen(
     val waterLog by waterViewModel.waterLog.collectAsState()
     val scannedMedication by medViewModel.scannedMedication.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var selectedTab by rememberSaveable { mutableStateOf("prescription") }
 
     if (scannedMedication != null) {
         AlertDialog(
@@ -127,18 +145,46 @@ fun DashboardScreen(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        drawerContent = { DrawerContent() }
+        drawerContent = {
+            DrawerContent(
+                selectedTab = selectedTab,
+                onPrescriptionClick = {
+                    selectedTab = "prescription"
+                    scope.launch { drawerState.close() }
+                },
+                onHydrationClick = {
+                    selectedTab = "hydration"
+                    scope.launch { drawerState.close() }
+                }
+            )
+        }
     ) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("ReMed") },
+                    title = { Text(if (selectedTab == "prescription") "Prescriptions" else "Hydration") },
                     navigationIcon = {
                         IconButton(onClick = onMenuClick) {
                             Icon(Icons.Default.Menu, contentDescription = "Menu")
                         }
                     }
                 )
+            },
+            bottomBar = {
+                NavigationBar {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.LocalPharmacy, contentDescription = "Prescription") },
+                        label = { Text("Prescription") },
+                        selected = selectedTab == "prescription",
+                        onClick = { selectedTab = "prescription" }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.WaterDrop, contentDescription = "Hydration") },
+                        label = { Text("Hydration") },
+                        selected = selectedTab == "hydration",
+                        onClick = { selectedTab = "hydration" }
+                    )
+                }
             }
         ) { padding ->
             Column(
@@ -147,38 +193,51 @@ fun DashboardScreen(
                     .padding(padding)
                     .padding(16.dp)
             ) {
-                Text("Your Dashboard", style = MaterialTheme.typography.headlineMedium)
+                if (selectedTab == "prescription") {
+                    Text("Prescription Scanner", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onScanPrescription) {
-                        Text("Scan Prescription")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = onScanPrescription,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.LocalPharmacy, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Scan (Rx)")
+                        }
+                        Button(
+                            onClick = onSelectFromGallery,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Gallery")
+                        }
                     }
-                    Button(onClick = onSelectFromGallery) {
-                        Text("Select from Gallery")
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text("Medication Schedule", style = MaterialTheme.typography.titleLarge)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(medications) { med ->
+                            MedicationItem(med) { medViewModel.markAsTaken(med) }
+                        }
                     }
-                }
+                } else {
+                    Text("Hydration Tracking", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Water Section
-                WaterCard(
-                    log = waterLog,
-                    onAdd = { waterViewModel.addWater(250) },
-                    onRemove = { waterViewModel.removeWater(250) },
-                    onSetReminder = { interval -> waterViewModel.setWaterReminderInterval(interval) },
-                    onCancelReminders = { waterViewModel.cancelWaterReminders() }
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text("Today's Medications", style = MaterialTheme.typography.titleLarge)
-
-                LazyColumn {
-                    items(medications) { med ->
-                        MedicationItem(med) { medViewModel.markAsTaken(med) }
-                    }
+                    WaterCard(
+                        log = waterLog,
+                        onAdd = { waterViewModel.addWater(250) },
+                        onRemove = { waterViewModel.removeWater(250) },
+                        onSetReminder = { interval -> waterViewModel.setWaterReminderInterval(interval) },
+                        onCancelReminders = { waterViewModel.cancelWaterReminders() }
+                    )
                 }
             }
         }
@@ -192,8 +251,8 @@ fun WaterCard(log: WaterLog?, onAdd: () -> Unit, onRemove: () -> Unit, onSetRemi
     val context = LocalContext.current
 
     val onSetReminderClick = {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             if (alarmManager.canScheduleExactAlarms()) {
                 showIntervalDialog = true
             } else {
@@ -242,19 +301,27 @@ fun WaterCard(log: WaterLog?, onAdd: () -> Unit, onRemove: () -> Unit, onSetRemi
     }
 
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Hydration", style = MaterialTheme.typography.titleMedium)
-            Text("${log?.amount ?: 0} / 1000 ml")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onAdd) { Text("Add 250ml") }
-                Button(onClick = onRemove) { Text("Remove 250ml") }
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Hydration Status", style = MaterialTheme.typography.titleMedium)
+            Text("${log?.amount ?: 0} / 1000 ml", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+            
+            LinearProgressIndicator(
+                progress = { ((log?.amount ?: 0) / 1000f).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+            )
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onAdd, modifier = Modifier.weight(1f)) { Text("Add 250ml") }
+                Button(onClick = onRemove, modifier = Modifier.weight(1f)) { Text("Remove") }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { onSetReminderClick() }) {
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { onSetReminderClick() }, modifier = Modifier.weight(1f)) {
                     Text("Set Reminder")
                 }
-                Button(onClick = onCancelReminders) {
-                    Text("Cancel Reminders")
+                Button(onClick = onCancelReminders, modifier = Modifier.weight(1f)) {
+                    Text("Stop Reminders")
                 }
             }
         }
@@ -263,13 +330,35 @@ fun WaterCard(log: WaterLog?, onAdd: () -> Unit, onRemove: () -> Unit, onSetRemi
 
 @Composable
 fun MedicationItem(med: Medication, onTaken: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(modifier = Modifier.padding(16.dp)) {
+    val timeFormatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val scheduledTimeStr = remember(med.scheduledTime) { timeFormatter.format(Date(med.scheduledTime)) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(med.name, style = MaterialTheme.typography.bodyLarge)
-                Text(med.dosage, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    med.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = if (med.isTaken) TextDecoration.LineThrough else null,
+                    color = if (med.isTaken) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "${med.dosage} • ${med.frequency} • $scheduledTimeStr",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
             }
-            Checkbox(checked = med.isTaken, onCheckedChange = { if (it) onTaken() })
+            Checkbox(
+                checked = med.isTaken,
+                onCheckedChange = { if (it) onTaken() },
+                enabled = !med.isTaken
+            )
         }
     }
 }

@@ -66,14 +66,48 @@ fun HandwritingCanvas(
 }
 
 fun captureCanvasToBitmap(lines: List<Line>, width: Int, height: Int): Bitmap {
-    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    if (lines.isEmpty()) return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+
+    // Find bounding box of the handwriting to crop it for better recognition
+    var minX = Float.MAX_VALUE
+    var minY = Float.MAX_VALUE
+    var maxX = Float.MIN_VALUE
+    var maxY = Float.MIN_VALUE
+
+    lines.forEach { line ->
+        line.points.forEach { point ->
+            minX = minOf(minX, point.x)
+            minY = minOf(minY, point.y)
+            maxX = maxOf(maxX, point.x)
+            maxY = maxOf(maxY, point.y)
+        }
+    }
+
+    // Add some padding and ensure we don't go out of bounds
+    val padding = 40f
+    minX = (minX - padding).coerceAtLeast(0f)
+    minY = (minY - padding).coerceAtLeast(0f)
+    maxX = (maxX + padding).coerceAtMost(width.toFloat())
+    maxY = (maxY + padding).coerceAtMost(height.toFloat())
+
+    val contentWidth = (maxX - minX).toInt()
+    val contentHeight = (maxY - minY).toInt()
+
+    if (contentWidth <= 0 || contentHeight <= 0) {
+        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(Color.WHITE)
+        }
+    }
+
+    // Create a bitmap that fits the content
+    val bitmap = Bitmap.createBitmap(contentWidth, contentHeight, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     canvas.drawColor(Color.WHITE)
     
     val paint = Paint().apply {
         color = Color.BLACK
         isAntiAlias = true
-        strokeWidth = 10f
+        strokeWidth = 12f
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
@@ -82,9 +116,9 @@ fun captureCanvasToBitmap(lines: List<Line>, width: Int, height: Int): Bitmap {
     lines.forEach { line ->
         val path = Path()
         if (line.points.isNotEmpty()) {
-            path.moveTo(line.points[0].x, line.points[0].y)
+            path.moveTo(line.points[0].x - minX, line.points[0].y - minY)
             for (i in 1 until line.points.size) {
-                path.lineTo(line.points[i].x, line.points[i].y)
+                path.lineTo(line.points[i].x - minX, line.points[i].y - minY)
             }
             canvas.drawPath(path, paint)
         }

@@ -8,6 +8,7 @@ import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
+import org.tensorflow.lite.support.image.ops.TransformToGrayscaleOp
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.nio.ByteBuffer
 
@@ -19,10 +20,16 @@ class HandwritingProcessor(private val context: Context) {
 
     fun processHandwriting(bitmap: Bitmap): String {
         // 1. Preprocess the image
-        // Assuming the model expects 28x28 grayscale image (common for MNIST-like handwriting models)
+        // Most handwriting models expect 28x28 grayscale, inverted (white ink on black background)
         val imageProcessor = ImageProcessor.Builder()
+            .add(TransformToGrayscaleOp())
             .add(ResizeOp(28, 28, ResizeOp.ResizeMethod.BILINEAR))
-            .add(NormalizeOp(0f, 255f)) // Normalize to [0, 1]
+            // Invert colors while normalizing: Our canvas is black ink (0) on white (255).
+            // (255 - x) / 255 maps white to 0.0 (background) and black to 1.0 (ink).
+            // NormalizeOp(mean, stddev) -> result = (val - mean) / stddev
+            // To get (255 - x) / 255.0:
+            // x' = (x - 255) / -255.0 = (255 - x) / 255.0
+            .add(NormalizeOp(255f, -255f))
             .build()
 
         var tensorImage = TensorImage(DataType.FLOAT32)
@@ -34,7 +41,6 @@ class HandwritingProcessor(private val context: Context) {
         val outputBuffer = outputs.outputFeature0AsTensorBuffer
 
         // 3. Post-process (Translate tensor to character)
-        // This depends on the specific model's output (e.g., Softmax indices to A-Z, 0-9)
         return translateBufferToText(outputBuffer)
     }
 
@@ -42,8 +48,16 @@ class HandwritingProcessor(private val context: Context) {
         val floatArray = buffer.floatArray
         val maxIndex = floatArray.indices.maxByOrNull { floatArray[it] } ?: -1
         
-        // Example mapping for a numeric model (0-9)
-        return if (maxIndex in 0..9) maxIndex.toString() else "?"
+        // Comprehensive alphanumeric mapping (EMNIST-like)
+        // 0-9: '0'-'9'
+        // 10-35: 'A'-'Z'
+        // 36-61: 'a'-'z'
+        return when (maxIndex) {
+            in 0..9 -> maxIndex.toString()
+            in 10..35 -> ('A'.code + (maxIndex - 10)).toChar().toString()
+            in 36..61 -> ('a'.code + (maxIndex - 36)).toChar().toString()
+            else -> "?"
+        }
     }
 
     fun close() {

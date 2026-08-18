@@ -33,30 +33,32 @@ class MedicationViewModel(
         repository.updateMedication(medication.copy(isTaken = true))
     }
 
-    fun onImageScanned(bitmap: Bitmap) {
-        viewModelScope.launch {
-            val text = prescriptionScanner.scanImage(bitmap)
-            if (text != null) {
-                _scannedMedication.value = parsePrescription(text)
-            }
-        }
+    suspend fun onImageScanned(bitmap: Bitmap): Boolean {
+        val text = prescriptionScanner.scanImage(bitmap)
+        return if (text != null) {
+            val parsed = parsePrescription(text)
+            if (parsed != null) {
+                _scannedMedication.value = parsed
+                true
+            } else false
+        } else false
     }
 
-    fun onHandwritingScanned(bitmap: Bitmap) {
-        viewModelScope.launch {
-            val text = handwritingProcessor.processHandwriting(bitmap)
-            // For handwriting, we try to parse it, but if it's just a name, we use it directly
-            _scannedMedication.value = parsePrescription(text) ?: if (text.isNotBlank() && text != "?") {
-                Medication(
-                    name = text,
-                    dosage = "1 pill",
-                    frequency = "daily",
-                    scheduledTime = System.currentTimeMillis()
-                )
-            } else {
-                null
-            }
-        }
+    suspend fun onHandwritingScanned(bitmap: Bitmap): Boolean {
+        val text = handwritingProcessor.processHandwriting(bitmap)
+        val parsed = parsePrescription(text) ?: if (text.isNotBlank() && text != "?") {
+            Medication(
+                name = text,
+                dosage = "1 pill",
+                frequency = "daily",
+                scheduledTime = System.currentTimeMillis()
+            )
+        } else null
+
+        return if (parsed != null) {
+            _scannedMedication.value = parsed
+            true
+        } else false
     }
 
     fun clearScannedMedication() {
@@ -64,32 +66,40 @@ class MedicationViewModel(
     }
 
     private fun parsePrescription(text: String): Medication? {
+        val lines = text.lines().filter { it.isNotBlank() }
+        if (lines.isEmpty()) return null
+
         var name: String? = null
         var dosage: String? = null
         var frequency: String? = null
 
-        text.lines().forEach { line ->
+        lines.forEach { line ->
             val lowerCaseLine = line.lowercase()
-            if (name == null && lowerCaseLine.contains("medication")) {
-                name = line.substringAfter(":").trim()
-            }
-            if (dosage == null && lowerCaseLine.contains("dosage")) {
-                dosage = line.substringAfter(":").trim()
-            }
-            if (frequency == null && lowerCaseLine.contains("frequency")) {
-                frequency = line.substringAfter(":").trim()
+            when {
+                name == null && lowerCaseLine.contains("medication") -> name = line.substringAfter(":").trim()
+                dosage == null && lowerCaseLine.contains("dosage") -> dosage = line.substringAfter(":").trim()
+                frequency == null && lowerCaseLine.contains("frequency") -> frequency = line.substringAfter(":").trim()
             }
         }
 
-        return if (name != null) {
+        // Fallback: If no keywords found, assume first line is name, second is dosage
+        if (name == null && lines.isNotEmpty()) {
+            name = lines[0].trim()
+            if (dosage == null && lines.size > 1) {
+                dosage = lines[1].trim()
+            }
+            if (frequency == null && lines.size > 2) {
+                frequency = lines[2].trim()
+            }
+        }
+
+        return name?.let {
             Medication(
-                name = name!!,
+                name = it,
                 dosage = dosage ?: "1 pill",
                 frequency = frequency ?: "daily",
                 scheduledTime = System.currentTimeMillis()
             )
-        } else {
-            null
         }
     }
 }

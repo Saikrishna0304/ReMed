@@ -5,9 +5,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.launch
 import com.example.remed.ocr.PrescriptionScanner
 import com.example.remed.ui.MedicationViewModel
 
@@ -17,13 +27,14 @@ fun ScannerScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    val screenHeight = configuration.screenHeightDp.dp
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val scope = rememberCoroutineScope()
     
     var isScanning by remember { mutableStateOf(false) }
     var useHandwriting by remember { mutableStateOf(false) }
     val handwritingLines = remember { mutableStateListOf<Line>() }
+    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
+    var cameraPreviewView by remember { mutableStateOf<PreviewView?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -41,7 +52,13 @@ fun ScannerScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
 
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+        Box(modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth()
+            .onGloballyPositioned { coordinates ->
+                canvasSize = coordinates.size
+            }
+        ) {
             if (useHandwriting) {
                 HandwritingCanvas(
                     modifier = Modifier
@@ -50,17 +67,51 @@ fun ScannerScreen(
                     lines = handwritingLines
                 )
             } else {
-                Text("Camera View Placeholder", modifier = Modifier.align(androidx.compose.ui.Alignment.Center))
+                AndroidView(
+                    factory = { ctx ->
+                        PreviewView(ctx).apply {
+                            cameraPreviewView = this
+                            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+                            cameraProviderFuture.addListener({
+                                val cameraProvider = cameraProviderFuture.get()
+                                val preview = Preview.Builder().build().also {
+                                    it.setSurfaceProvider(surfaceProvider)
+                                }
+                                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                                try {
+                                    cameraProvider.unbindAll()
+                                    cameraProvider.bindToLifecycle(
+                                        lifecycleOwner,
+                                        cameraSelector,
+                                        preview
+                                    )
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }, ContextCompat.getMainExecutor(ctx))
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                onClick = onNavigateBack,
+                modifier = Modifier.weight(1f),
+                enabled = !isScanning
+            ) {
+                Text("Cancel")
+            }
+
             if (useHandwriting) {
                 OutlinedButton(
                     onClick = { handwritingLines.clear() },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = !isScanning
                 ) {
                     Text("Clear")
                 }
@@ -68,24 +119,31 @@ fun ScannerScreen(
             
             Button(
                 onClick = {
-                    isScanning = true
-                    if (useHandwriting) {
-                        // In a real scenario, we'd get the actual pixel dimensions of the Box
-                        // Here we approximate or use a fixed size for the TFLite model
-                        val bitmap = captureCanvasToBitmap(
-                            handwritingLines, 
-                            720, // Approximate width
-                            1280 // Approximate height
-                        )
-                        viewModel.onHandwritingScanned(bitmap)
-                        onNavigateBack()
-                    } else {
-                        // Camera scan logic would go here
+                    scope.launch {
+                        isScanning = true
+                        val success = if (useHandwriting) {
+                            val bitmap = captureCanvasToBitmap(
+                                handwritingLines,
+                                if (canvasSize.width > 0) canvasSize.width else 720,
+                                if (canvasSize.height > 0) canvasSize.height else 1280
+                            )
+                            viewModel.onHandwritingScanned(bitmap)
+                        } else {
+                            cameraPreviewView?.bitmap?.let { bitmap ->
+                                viewModel.onImageScanned(bitmap)
+                            } ?: false
+                        }
+                        
                         isScanning = false
+                        if (success) {
+                            onNavigateBack()
+                        } else {
+                            // Optionally show an error message
+                        }
                     }
                 },
                 modifier = Modifier.weight(1f),
-                enabled = !isScanning && (!useHandwriting || handwritingLines.isNotEmpty())
+                enabled = !isScanning && (useHandwriting && handwritingLines.isNotEmpty() || !useHandwriting)
             ) {
                 Text(if (isScanning) "Processing..." else "Process")
             }
