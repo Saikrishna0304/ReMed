@@ -116,6 +116,7 @@ class MainActivity : ComponentActivity() {
                             val viewModel = when {
                                 modelClass.isAssignableFrom(MedicationViewModel::class.java) -> {
                                     MedicationViewModel(
+                                        app,
                                         repository,
                                         PrescriptionScanner(this@MainActivity),
                                         HandwritingProcessor(this@MainActivity)

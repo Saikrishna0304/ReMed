@@ -6,6 +6,7 @@ color splash_bg
 color white
 drawable ic_launcher_background
 drawable ic_launcher_foreground
+drawable ic_launcher_foreground_bitmap
 drawable ic_splash_logo
 drawable ic_water_drop
 mipmap ic_launcher

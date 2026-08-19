@@ -32,9 +32,31 @@ fun ScannerScreen(
     
     var isScanning by remember { mutableStateOf(false) }
     var useHandwriting by remember { mutableStateOf(false) }
+    var showScanError by remember { mutableStateOf(false) }
     val handwritingLines = remember { mutableStateListOf<Line>() }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var cameraPreviewView by remember { mutableStateOf<PreviewView?>(null) }
+
+    if (showScanError) {
+        AlertDialog(
+            onDismissRequest = { showScanError = false },
+            title = { Text("Scan Unsuccessful") },
+            text = { Text("We couldn't clearly read the prescription. Would you like to try again or enter the details manually?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showScanError = false
+                    onNavigateBack()
+                }) {
+                    Text("Manual Entry")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showScanError = false }) {
+                    Text("Try Again")
+                }
+            }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -138,7 +160,7 @@ fun ScannerScreen(
                         if (success) {
                             onNavigateBack()
                         } else {
-                            // Optionally show an error message
+                            showScanError = true
                         }
                     }
                 },

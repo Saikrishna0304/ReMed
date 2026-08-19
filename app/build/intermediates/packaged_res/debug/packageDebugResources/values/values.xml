@@ -4,7 +4,7 @@
     <color name="logo_color">#FF1A1C1E</color>
     <color name="splash_bg">#FFFFFFFF</color>
     <color name="white">#FFFFFFFF</color>
-    <string name="app_name">ReMed</string>
+    <string name="app_name" translatable="false">ReMed</string>
     <style name="Theme.ReMed" parent="android:Theme.Material.Light.NoActionBar"/>
     <style name="Theme.ReMed.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_bg</item>

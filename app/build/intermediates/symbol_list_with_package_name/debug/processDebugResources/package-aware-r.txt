@@ -681,6 +681,7 @@ drawable ic_call_decline
 drawable ic_call_decline_low
 drawable ic_launcher_background
 drawable ic_launcher_foreground
+drawable ic_launcher_foreground_bitmap
 drawable ic_splash_logo
 drawable ic_water_drop
 drawable icon_background

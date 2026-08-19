@@ -1,25 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <!-- Centered ReMed logo for the app icon -->
-    <group android:translateX="4" android:translateY="30">
-        <path
-            android:fillColor="#FF1A1C1E"
-            android:pathData="M10,10h10c3,0 5,2 5,5s-2,5 -5,5h-5v10h-5V10z M15,14v4h5c1,0 2,-0.5 2,-2s-1,-2 -2,-2H15z" />
-        <path
-            android:fillColor="#FF1A1C1E"
-            android:pathData="M28,20c0,-3 2,-6 6,-6s6,3 6,6v1h-8c0,2 1,3 3,3c1,0 2,-0.5 3,-2l3,1c-1,3 -4,4 -7,4 -4,0 -7,-3 -7,-7z M36,19c0,-1 -1,-2 -3,-2s-3,1 -3,2h6z" />
-        <path
-            android:fillColor="#FF1A1C1E"
-            android:pathData="M45,10h5l3,10l3,-10h5v20h-4V16l-4,12h-1l-4,-12v14h-4V10z" />
-        <path
-            android:fillColor="#FF1A1C1E"
-            android:pathData="M65,20c0,-3 2,-6 6,-6s6,3 6,6v1h-8c0,2 1,3 3,3c1,0 2,-0.5 3,-2l3,1c-1,3 -4,4 -7,4 -4,0 -7,-3 -7,-7z M73,19c0,-1 -1,-2 -3,-2s-3,1 -3,2h6z" />
-        <path
-            android:fillColor="#FF1A1C1E"
-            android:pathData="M82,10h5v7c1,-2 3,-3 5,-3c4,0 6,3 6,8s-2,8 -6,8c-2,0 -4,-1 -5,-3v3h-5V10z M87,22c0,3 1,4 3,4s3,-1 3,-4s-1,-4 -3,-4s-3,1 -3,4z" />
-    </group>
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:gravity="center"
+        android:width="120dp"
+        android:height="120dp">
+        <bitmap
+            android:src="@drawable/ic_launcher_foreground_bitmap"
+            android:gravity="center" />
+    </item>
+</layer-list>

@@ -13,6 +13,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.LocalPharmacy
 import androidx.compose.material.icons.filled.WaterDrop
@@ -36,10 +39,15 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -66,6 +74,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.launch
+import com.example.remed.R
 import com.example.remed.data.Medication
 import com.example.remed.data.WaterLog
 import com.example.remed.ui.MedicationViewModel
@@ -87,6 +96,115 @@ fun DashboardScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var selectedTab by rememberSaveable { mutableStateOf("prescription") }
+
+    var showManualAddDialog by remember { mutableStateOf(false) }
+    var manualName by remember { mutableStateOf("") }
+    var manualDosage by remember { mutableStateOf("") }
+    var manualFrequency by remember { mutableStateOf("") }
+
+    val timeSlots = listOf(
+        "Early Morning (6am - 9am)" to 7,
+        "Morning (9am - 12pm)" to 10,
+        "Afternoon (12pm - 3pm)" to 13,
+        "Evening (3pm - 6pm)" to 16,
+        "Night (6pm - 9pm)" to 20
+    )
+    var selectedTimeSlot by remember { mutableStateOf(timeSlots[0]) }
+    var expanded by remember { mutableStateOf(false) }
+
+    if (showManualAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showManualAddDialog = false },
+            title = { Text("Add Medication Manually") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextField(
+                        value = manualName,
+                        onValueChange = { manualName = it },
+                        label = { Text("Medication Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    TextField(
+                        value = manualDosage,
+                        onValueChange = { manualDosage = it },
+                        label = { Text("Dosage (e.g. 500mg)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    TextField(
+                        value = manualFrequency,
+                        onValueChange = { manualFrequency = it },
+                        label = { Text("Frequency (e.g. Daily)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        TextField(
+                            value = selectedTimeSlot.first,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Reminder Time") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            timeSlots.forEach { slot ->
+                                DropdownMenuItem(
+                                    text = { Text(slot.first) },
+                                    onClick = {
+                                        selectedTimeSlot = slot
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (manualName.isNotBlank()) {
+                            val calendar = java.util.Calendar.getInstance().apply {
+                                set(java.util.Calendar.HOUR_OF_DAY, selectedTimeSlot.second)
+                                set(java.util.Calendar.MINUTE, 0)
+                                set(java.util.Calendar.SECOND, 0)
+                                // If the time has already passed today, schedule for tomorrow
+                                if (timeInMillis < System.currentTimeMillis()) {
+                                    add(java.util.Calendar.DAY_OF_YEAR, 1)
+                                }
+                            }
+
+                            medViewModel.insert(
+                                Medication(
+                                    name = manualName,
+                                    dosage = manualDosage.ifBlank { "As prescribed" },
+                                    frequency = manualFrequency.ifBlank { "Daily" },
+                                    scheduledTime = calendar.timeInMillis
+                                )
+                            )
+                            showManualAddDialog = false
+                            manualName = ""
+                            manualDosage = ""
+                            manualFrequency = ""
+                        }
+                    }
+                ) {
+                    Text("Add")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showManualAddDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     if (scannedMedication != null) {
         AlertDialog(
@@ -165,10 +283,22 @@ fun DashboardScreen(
                     title = { Text(if (selectedTab == "prescription") "Prescriptions" else "Hydration") },
                     navigationIcon = {
                         IconButton(onClick = onMenuClick) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_splash_logo),
+                                contentDescription = "Menu",
+                                modifier = Modifier.size(40.dp),
+                                tint = androidx.compose.ui.graphics.Color.Unspecified
+                            )
                         }
                     }
                 )
+            },
+            floatingActionButton = {
+                if (selectedTab == "prescription") {
+                    FloatingActionButton(onClick = { showManualAddDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Add Medication")
+                    }
+                }
             },
             bottomBar = {
                 NavigationBar {
@@ -200,17 +330,19 @@ fun DashboardScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             onClick = onScanPrescription,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(4.dp)
                         ) {
-                            Icon(Icons.Default.LocalPharmacy, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Scan (Rx)")
+                            Icon(Icons.Default.LocalPharmacy, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Scan", style = MaterialTheme.typography.labelMedium)
                         }
                         Button(
                             onClick = onSelectFromGallery,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(4.dp)
                         ) {
-                            Text("Gallery")
+                            Text("Gallery", style = MaterialTheme.typography.labelMedium)
                         }
                     }
 
@@ -233,8 +365,8 @@ fun DashboardScreen(
 
                     WaterCard(
                         log = waterLog,
-                        onAdd = { waterViewModel.addWater(250) },
-                        onRemove = { waterViewModel.removeWater(250) },
+                        onAdd = { amount -> waterViewModel.addWater(amount) },
+                        onRemove = { amount -> waterViewModel.removeWater(amount) },
                         onSetReminder = { interval -> waterViewModel.setWaterReminderInterval(interval) },
                         onCancelReminders = { waterViewModel.cancelWaterReminders() }
                     )
@@ -245,10 +377,22 @@ fun DashboardScreen(
 }
 
 @Composable
-fun WaterCard(log: WaterLog?, onAdd: () -> Unit, onRemove: () -> Unit, onSetReminder: (Long) -> Unit, onCancelReminders: () -> Unit) {
+fun WaterCard(
+    log: WaterLog?,
+    onAdd: (Int) -> Unit,
+    onRemove: (Int) -> Unit,
+    onSetReminder: (Long) -> Unit,
+    onCancelReminders: () -> Unit
+) {
     var showIntervalDialog by remember { mutableStateOf(false) }
     var interval by remember { mutableStateOf("") }
     val context = LocalContext.current
+
+    var goal by rememberSaveable { mutableStateOf("1000") }
+    var addAmount by rememberSaveable { mutableStateOf("250") }
+
+    val goalInt = goal.toIntOrNull()?.coerceIn(1, 5000) ?: 1000
+    val addAmountInt = addAmount.toIntOrNull() ?: 250
 
     val onSetReminderClick = {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -303,17 +447,37 @@ fun WaterCard(log: WaterLog?, onAdd: () -> Unit, onRemove: () -> Unit, onSetRemi
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Hydration Status", style = MaterialTheme.typography.titleMedium)
-            Text("${log?.amount ?: 0} / 1000 ml", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+            
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextField(
+                    value = goal,
+                    onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) goal = it },
+                    label = { Text("Goal (ml)") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+                TextField(
+                    value = addAmount,
+                    onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) addAmount = it },
+                    label = { Text("Add (ml)") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            }
+
+            Text("${log?.amount ?: 0} / $goalInt ml", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
             
             LinearProgressIndicator(
-                progress = { ((log?.amount ?: 0) / 1000f).coerceIn(0f, 1f) },
+                progress = { ((log?.amount ?: 0) / goalInt.toFloat()).coerceIn(0f, 1f) },
                 modifier = Modifier.fillMaxWidth().height(8.dp),
                 strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
             )
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onAdd, modifier = Modifier.weight(1f)) { Text("Add 250ml") }
-                Button(onClick = onRemove, modifier = Modifier.weight(1f)) { Text("Remove") }
+                Button(onClick = { onAdd(addAmountInt) }, modifier = Modifier.weight(1f)) { Text("Add ${addAmountInt}ml") }
+                Button(onClick = { onRemove(addAmountInt) }, modifier = Modifier.weight(1f)) { Text("Remove") }
             }
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

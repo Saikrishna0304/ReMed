@@ -1,23 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="200dp"
-    android:height="80dp"
-    android:viewportWidth="200"
-    android:viewportHeight="80">
-    <!-- Placeholder for "ReMed" text using simple paths -->
-    <path
-        android:fillColor="#FF1A1C1E"
-        android:pathData="M20,20h15c5,0 8,3 8,7s-3,7 -8,7h-7v16h-8V20z M28,27v7h7c2,0 3,-1 3,-3.5S37,27 35,27H28z" />
-    <path
-        android:fillColor="#FF1A1C1E"
-        android:pathData="M45,35c0,-5 4,-9 9,-9s9,4 9,9v2h-12c0,3 2,5 5,5c2,0 4,-1 5,-3l5,2c-2,4 -6,6 -10,6 -6,0 -11,-4 -11,-11z M57,33c0,-2 -2,-4 -4,-4s-4,2 -4,4h8z" />
-    <path
-        android:fillColor="#FF1A1C1E"
-        android:pathData="M70,20h8l5,15l5,-15h8v30h-7V30l-6,18h-2l-6,-18v20h-7V20z" />
-    <path
-        android:fillColor="#FF1A1C1E"
-        android:pathData="M100,35c0,-5 4,-9 9,-9s9,4 9,9v2h-12c0,3 2,5 5,5c2,0 4,-1 5,-3l5,2c-2,4 -6,6 -10,6 -6,0 -11,-4 -11,-11z M112,33c0,-2 -2,-4 -4,-4s-4,2 -4,4h8z" />
-    <path
-        android:fillColor="#FF1A1C1E"
-        android:pathData="M125,20h8v10c2,-3 5,-4 8,-4c6,0 10,5 10,12s-4,12 -10,12c-3,0 -6,-1 -8,-4v4h-8V20z M133,38c0,4 2,6 5,6s5,-2 5,-6s-2,-6 -5,-6s-5,2 -5,6z" />
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:gravity="center"
+        android:width="120dp"
+        android:height="120dp">
+        <bitmap
+            android:src="@drawable/ic_launcher_foreground_bitmap"
+            android:gravity="center" />
+    </item>
+</layer-list>
