@@ -13,7 +13,7 @@ class MedicationReminderReceiver : BroadcastReceiver() {
         val dosage = intent.getStringExtra("dosage") ?: ""
         
         val notification = NotificationCompat.Builder(context, NotificationHelper.MED_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.remed_logo)
             .setContentTitle("Medication Reminder")
             .setContentText("It's time to take your $medName ($dosage)")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

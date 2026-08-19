@@ -118,8 +118,8 @@ class MainActivity : ComponentActivity() {
                                     MedicationViewModel(
                                         app,
                                         repository,
-                                        PrescriptionScanner(this@MainActivity),
-                                        HandwritingProcessor(this@MainActivity)
+                                        PrescriptionScanner(app),
+                                        HandwritingProcessor(app)
                                     )
                                 }
                                 modelClass.isAssignableFrom(WaterViewModel::class.java) -> {

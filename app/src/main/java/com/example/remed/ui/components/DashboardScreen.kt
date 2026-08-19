@@ -284,7 +284,7 @@ fun DashboardScreen(
                     navigationIcon = {
                         IconButton(onClick = onMenuClick) {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_splash_logo),
+                                painter = painterResource(id = R.drawable.remed_logo),
                                 contentDescription = "Menu",
                                 modifier = Modifier.size(40.dp),
                                 tint = androidx.compose.ui.graphics.Color.Unspecified

@@ -133,7 +133,6 @@ ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:13:5-6
 application
 ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:15:5-45:19
 INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:15:5-45:19
-INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:15:5-45:19
 MERGED from [androidx.camera:camera-camera2:1.3.2] C:\Users\saikr\.gradle\caches\9.3.1\transforms\e87f33538d27ebd8c175733c7c17a607\workspace\transformed\jetified-camera-camera2-1.3.2\AndroidManifest.xml:23:5-34:19
 MERGED from [androidx.camera:camera-camera2:1.3.2] C:\Users\saikr\.gradle\caches\9.3.1\transforms\e87f33538d27ebd8c175733c7c17a607\workspace\transformed\jetified-camera-camera2-1.3.2\AndroidManifest.xml:23:5-34:19
 MERGED from [androidx.camera:camera-core:1.3.2] C:\Users\saikr\.gradle\caches\9.3.1\transforms\b3fb6afa90898c961f71015b92e0add8\workspace\transformed\jetified-camera-core-1.3.2\AndroidManifest.xml:23:5-34:19
@@ -192,8 +191,6 @@ MERGED from [com.google.ai.edge.litert:litert-api:1.0.1] C:\Users\saikr\.gradle\
 		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:22:9-41
 	android:fullBackupContent
 		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:19:9-54
-	android:testOnly
-		INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml
 	android:roundIcon
 		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:21:9-54
 	tools:targetApi
@@ -238,14 +235,6 @@ ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:41:9-4
 		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:43:13-37
 	android:name
 		ADDED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml:42:13-69
-profileable
-INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml reason: profileable injection requested
-INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml
-INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml
-	android:enabled
-		INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml
-	android:shell
-		INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml
 uses-sdk
 INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from K:\Codeing\Projects\ReMed\GIT\app\src\main\AndroidManifest.xml

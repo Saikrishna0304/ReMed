@@ -680,9 +680,6 @@ drawable ic_call_answer_video_low
 drawable ic_call_decline
 drawable ic_call_decline_low
 drawable ic_launcher_background
-drawable ic_launcher_foreground
-drawable ic_launcher_foreground_bitmap
-drawable ic_splash_logo
 drawable ic_water_drop
 drawable icon_background
 drawable notification_action_background
@@ -698,6 +695,7 @@ drawable notification_template_icon_bg
 drawable notification_template_icon_low_bg
 drawable notification_tile_bg
 drawable notify_panel_notification_icon_bg
+drawable remed_logo
 drawable tooltip_frame_dark
 drawable tooltip_frame_light
 id ALT

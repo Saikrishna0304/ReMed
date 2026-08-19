@@ -33,6 +33,7 @@
         android:allowBackup="true"
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:dataExtractionRules="@xml/data_extraction_rules"
+        android:debuggable="true"
         android:extractNativeLibs="false"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -58,10 +59,6 @@
         <receiver
             android:name="com.example.remed.notifications.MedicationReminderReceiver"
             android:exported="false" />
-
-        <profileable
-            android:enabled="true"
-            android:shell="true" />
 
         <service
             android:name="androidx.camera.core.impl.MetadataHolderService"
