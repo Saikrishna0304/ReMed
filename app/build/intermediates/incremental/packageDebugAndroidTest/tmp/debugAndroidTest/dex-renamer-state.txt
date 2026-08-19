@@ -1,0 +1,7 @@
+#Wed Aug 19 10:48:57 IST 2026
+base.0=K\:\\Codeing\\Projects\\ReMed\\GIT\\app\\build\\intermediates\\dex\\debugAndroidTest\\mergeExtDexDebugAndroidTest\\classes.dex
+base.1=K\:\\Codeing\\Projects\\ReMed\\GIT\\app\\build\\intermediates\\dex\\debugAndroidTest\\mergeProjectDexDebugAndroidTest\\0\\classes.dex
+path.0=classes.dex
+path.1=0/classes.dex
+renamed.0=classes.dex
+renamed.1=classes2.dex
