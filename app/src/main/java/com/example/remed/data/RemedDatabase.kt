@@ -5,10 +5,11 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Medication::class, WaterLog::class], version = 1, exportSchema = false)
+@Database(entities = [Medication::class, WaterLog::class, WaterSettings::class, StepLog::class, StepSettings::class], version = 4, exportSchema = false)
 abstract class ReMedDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
     abstract fun waterDao(): WaterDao
+    abstract fun stepDao(): StepDao
 
     companion object {
         @Volatile
@@ -20,7 +21,9 @@ abstract class ReMedDatabase : RoomDatabase() {
                     context.applicationContext,
                     ReMedDatabase::class.java,
                     "remed_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

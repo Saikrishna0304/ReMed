@@ -21,6 +21,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,9 +35,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.remed.ocr.HandwritingProcessor
 import com.example.remed.ocr.PrescriptionScanner
+import com.example.remed.ui.AuthViewModel
 import com.example.remed.ui.MedicationViewModel
+import com.example.remed.ui.StepViewModel
 import com.example.remed.ui.WaterViewModel
 import com.example.remed.ui.components.DashboardScreen
+import com.example.remed.ui.components.FamilySetupScreen
+import com.example.remed.ui.components.LoginScreen
 import com.example.remed.ui.components.ScannerScreen
 import com.example.remed.ui.theme.ReMedTheme
 import kotlinx.coroutines.launch
@@ -104,6 +109,7 @@ class MainActivity : ComponentActivity() {
 
         val app = application as RemedApplication
         val repository = app.repository
+        val authRepository = app.authRepository
 
         setContent {
             ReMedTheme {
@@ -111,6 +117,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val authViewModel: AuthViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            @Suppress("UNCHECKED_CAST")
+                            return AuthViewModel(authRepository) as T
+                        }
+                    })
+
                     val factory = object : ViewModelProvider.Factory {
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
                             val viewModel = when {
@@ -118,12 +131,16 @@ class MainActivity : ComponentActivity() {
                                     MedicationViewModel(
                                         app,
                                         repository,
+                                        authViewModel.userId,
                                         PrescriptionScanner(app),
                                         HandwritingProcessor(app)
                                     )
                                 }
                                 modelClass.isAssignableFrom(WaterViewModel::class.java) -> {
-                                    WaterViewModel(app, repository)
+                                    WaterViewModel(app, repository, authViewModel.userId)
+                                }
+                                modelClass.isAssignableFrom(StepViewModel::class.java) -> {
+                                    StepViewModel(app, repository, authViewModel.userId)
                                 }
                                 else -> {
                                     throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
@@ -133,31 +150,46 @@ class MainActivity : ComponentActivity() {
                             return viewModel as T
                         }
                     }
-                    medicationViewModel = viewModel(factory = factory)
-                    val waterViewModel: WaterViewModel = viewModel(factory = factory)
-                    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-                    val scope = rememberCoroutineScope()
 
-                    var currentScreen by remember { mutableStateOf("dashboard") }
+                    val currentUser by authViewModel.currentUser.collectAsState()
+                    val userProfile by authViewModel.userProfile.collectAsState()
+                    val family by authViewModel.family.collectAsState()
+                    val isGuestMode by authViewModel.isGuestMode.collectAsState()
 
-                    if (currentScreen == "dashboard") {
-                        DashboardScreen(
-                            medViewModel = medicationViewModel,
-                            waterViewModel = waterViewModel,
-                            onScanPrescription = { currentScreen = "scanner" },
-                            onSelectFromGallery = { selectFromGallery.launch("image/*") },
-                            drawerState = drawerState,
-                            onMenuClick = {
-                                scope.launch {
-                                    drawerState.open()
-                                }
-                            }
-                        )
+                    if (currentUser == null && !isGuestMode) {
+                        LoginScreen(authViewModel = authViewModel, onLoginSuccess = { /* Managed by collectAsState */ })
+                    } else if (!isGuestMode && (userProfile == null || family == null)) {
+                        FamilySetupScreen(authViewModel = authViewModel)
                     } else {
-                        ScannerScreen(
-                            viewModel = medicationViewModel,
-                            onNavigateBack = { currentScreen = "dashboard" }
-                        )
+                        medicationViewModel = viewModel(factory = factory)
+                        val waterViewModel: WaterViewModel = viewModel(factory = factory)
+                        val stepViewModel: StepViewModel = viewModel(factory = factory)
+                        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+                        val scope = rememberCoroutineScope()
+
+                        var currentScreen by remember { mutableStateOf("dashboard") }
+
+                        if (currentScreen == "dashboard") {
+                            DashboardScreen(
+                                authViewModel = authViewModel,
+                                medViewModel = medicationViewModel,
+                                waterViewModel = waterViewModel,
+                                stepViewModel = stepViewModel,
+                                onScanPrescription = { currentScreen = "scanner" },
+                                onSelectFromGallery = { selectFromGallery.launch("image/*") },
+                                drawerState = drawerState,
+                                onMenuClick = {
+                                    scope.launch {
+                                        drawerState.open()
+                                    }
+                                }
+                            )
+                        } else {
+                            ScannerScreen(
+                                viewModel = medicationViewModel,
+                                onNavigateBack = { currentScreen = "dashboard" }
+                            )
+                        }
                     }
                 }
             }

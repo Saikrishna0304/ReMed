@@ -1,50 +1,30 @@
 [
     {
-        "merged": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-debug-65:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
-        "source": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-main-67:\\mipmap-anydpi-v26\\ic_launcher.xml"
+        "merged": "com.example.remed.app-debug-77:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.example.remed.app-main-79:/mipmap-anydpi-v26/ic_launcher_round.xml"
     },
     {
-        "merged": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-debug-65:\\drawable_ic_launcher_foreground.xml.flat",
-        "source": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-main-67:\\drawable\\ic_launcher_foreground.xml"
+        "merged": "com.example.remed.app-debug-77:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.example.remed.app-main-79:/drawable/ic_launcher_background.xml"
     },
     {
-        "merged": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-debug-65:\\drawable_ic_app_logo.xml.flat",
-        "source": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-main-67:\\drawable\\ic_app_logo.xml"
+        "merged": "com.example.remed.app-debug-77:/drawable_ic_water_drop.xml.flat",
+        "source": "com.example.remed.app-main-79:/drawable/ic_water_drop.xml"
     },
     {
-        "merged": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-debug-65:\\drawable_ic_launcher_background.xml.flat",
-        "source": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-main-67:\\drawable\\ic_launcher_background.xml"
+        "merged": "com.example.remed.app-debug-77:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.example.remed.app-main-79:/mipmap-anydpi-v26/ic_launcher.xml"
     },
     {
-        "merged": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-debug-65:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-main-67:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+        "merged": "com.example.remed.app-debug-77:/xml_backup_rules.xml.flat",
+        "source": "com.example.remed.app-main-79:/xml/backup_rules.xml"
     },
     {
-        "merged": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-debug-65:\\xml_backup_rules.xml.flat",
-        "source": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-main-67:\\xml\\backup_rules.xml"
+        "merged": "com.example.remed.app-debug-77:/drawable_remed_logo.png.flat",
+        "source": "com.example.remed.app-main-79:/drawable/remed_logo.png"
     },
     {
-        "merged": "com.example.remed.app-debug-65:/drawable_remed_logo.png.flat",
-        "source": "com.example.remed.app-main-67:/drawable/remed_logo.png"
-    },
-    {
-        "merged": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-debug-65:\\drawable_ic_splash_logo.xml.flat",
-        "source": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-main-67:\\drawable\\ic_splash_logo.xml"
-    },
-    {
-        "merged": "com.example.remed.app-debug-65:/mipmap-anydpi-v26_ic_launcher.xml.flat",
-        "source": "com.example.remed.app-main-67:/mipmap-anydpi-v26/ic_launcher.xml"
-    },
-    {
-        "merged": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-debug-65:\\drawable_ic_water_drop.xml.flat",
-        "source": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-main-67:\\drawable\\ic_water_drop.xml"
-    },
-    {
-        "merged": "com.example.remed.app-debug-65:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "com.example.remed.app-main-67:/mipmap-anydpi-v26/ic_launcher_round.xml"
-    },
-    {
-        "merged": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-debug-65:\\xml_data_extraction_rules.xml.flat",
-        "source": "C:\\Users\\saikr\\.gradle\\daemon\\9.3.1\\com.example.remed.app-main-67:\\xml\\data_extraction_rules.xml"
+        "merged": "com.example.remed.app-debug-77:/xml_data_extraction_rules.xml.flat",
+        "source": "com.example.remed.app-main-79:/xml/data_extraction_rules.xml"
     }
 ]

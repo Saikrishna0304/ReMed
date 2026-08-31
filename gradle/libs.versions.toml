@@ -1,8 +1,10 @@
 
 [versions]
 android-application = "8.13.2"
-jetbrains-kotlin-android = "1.9.22"
-kotlin-ksp = "1.9.22-1.0.17"
+jetbrains-kotlin-android = "2.1.0"
+kotlin-ksp = "2.1.0-1.0.29"
+google-services = "4.4.1"
+firebase-bom = "32.7.2"
 androidx-core-ktx = "1.12.0"
 androidx-lifecycle-runtime-ktx = "2.7.0"
 androidx-activity-compose = "1.8.2"
@@ -20,6 +22,9 @@ mlkit-text-recognition = "19.0.0"
 tensorflow-lite = "2.17.0"
 tensorflow-lite-support = "0.5.0"
 androidx-camera = "1.3.2"
+play-services-auth = "22.0.0"
+androidx-credentials = "1.6.0"
+googleid = "1.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core-ktx" }
@@ -56,7 +61,19 @@ androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycl
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "androidx-camera" }
 androidx-camera-extensions = { group = "androidx.camera", name = "camera-extensions", version.ref = "androidx-camera" }
 
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "androidx-credentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "androidx-credentials" }
+com-google-android-libraries-identity-googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "play-services-auth" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
+firebase-analytics = { group = "com.google.firebase", name = "firebase-analytics" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-application" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "jetbrains-kotlin-android" }
 kotlin-ksp = { id = "com.google.devtools.ksp", version.ref = "kotlin-ksp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "jetbrains-kotlin-android" }
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }

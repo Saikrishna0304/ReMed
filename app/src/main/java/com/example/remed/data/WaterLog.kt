@@ -1,10 +1,10 @@
 package com.example.remed.data
 
 import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "water_logs")
+@Entity(tableName = "water_logs", primaryKeys = ["userId", "date"])
 data class WaterLog(
-    @PrimaryKey val date: String,
+    val userId: String,
+    val date: String,
     val amount: Int
 )

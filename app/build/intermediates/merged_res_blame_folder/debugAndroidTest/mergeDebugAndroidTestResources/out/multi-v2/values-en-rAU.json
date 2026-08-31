@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.remed.test.app-mergeDebugAndroidTestResources-32:/values-en-rAU/values-en-rAU.xml",
+            "outputFile": "com.example.remed.test.app-mergeDebugAndroidTestResources-33:/values-en-rAU/values-en-rAU.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\5c9bb6e5632bbd88e9aa61099deeb791\\workspace\\transformed\\jetified-ui-release\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\20a39b85a751e35efeefd0c53c626d97\\workspace\\transformed\\jetified-ui-release\\res\\values-en-rAU\\values-en-rAU.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\255849616f2e3caff1d29d1679f53981\\workspace\\transformed\\core-1.12.0\\res\\values-en-rAU\\values-en-rAU.xml",
+                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\ef3d8379be34e05bdb4701bb5c725986\\workspace\\transformed\\core-1.15.0\\res\\values-en-rAU\\values-en-rAU.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",

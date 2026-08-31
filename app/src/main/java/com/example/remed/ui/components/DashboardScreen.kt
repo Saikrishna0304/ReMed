@@ -80,11 +80,38 @@ import com.example.remed.data.WaterLog
 import com.example.remed.ui.MedicationViewModel
 import com.example.remed.ui.WaterViewModel
 
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import com.example.remed.data.WaterSettings
+
+import com.example.remed.ui.AuthViewModel
+import com.example.remed.ui.StepViewModel
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.graphicsLayer
+import com.example.remed.data.StepLog
+import com.example.remed.data.StepSettings
+
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
+import com.example.remed.ui.components.MedicationEditScreen
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
+    authViewModel: AuthViewModel,
     medViewModel: MedicationViewModel,
     waterViewModel: WaterViewModel,
+    stepViewModel: StepViewModel,
     onScanPrescription: () -> Unit,
     onSelectFromGallery: () -> Unit,
     drawerState: DrawerState,
@@ -92,10 +119,18 @@ fun DashboardScreen(
 ) {
     val medications by medViewModel.allMedications.collectAsState()
     val waterLog by waterViewModel.waterLog.collectAsState()
+    val waterSettings by waterViewModel.waterSettings.collectAsState()
+    val stepLog by stepViewModel.stepLog.collectAsState()
+    val stepSettings by stepViewModel.stepSettings.collectAsState()
     val scannedMedication by medViewModel.scannedMedication.collectAsState()
+    val userProfile by authViewModel.userProfile.collectAsState()
+    val family by authViewModel.family.collectAsState()
+    val isGuest by authViewModel.isGuestMode.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var selectedTab by rememberSaveable { mutableStateOf("prescription") }
+
+    var editingScannedMedication by remember { mutableStateOf<Medication?>(null) }
 
     var showManualAddDialog by remember { mutableStateOf(false) }
     var manualName by remember { mutableStateOf("") }
@@ -206,33 +241,23 @@ fun DashboardScreen(
         )
     }
 
-    if (scannedMedication != null) {
-        AlertDialog(
-            onDismissRequest = { medViewModel.clearScannedMedication() },
-            title = { Text("Confirm Scanned Medication") },
-            text = {
-                Column {
-                    Text("Name: ${scannedMedication?.name}")
-                    Text("Dosage: ${scannedMedication?.dosage}")
-                    Text("Frequency: ${scannedMedication?.frequency}")
+    if (scannedMedication != null || editingScannedMedication != null) {
+        val medToEdit = editingScannedMedication ?: scannedMedication!!
+        
+        Surface(modifier = Modifier.fillMaxSize()) {
+            MedicationEditScreen(
+                initialMedication = medToEdit,
+                onSave = { updatedMed ->
+                    medViewModel.insert(updatedMed)
+                    medViewModel.clearScannedMedication()
+                    editingScannedMedication = null
+                },
+                onCancel = {
+                    medViewModel.clearScannedMedication()
+                    editingScannedMedication = null
                 }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        scannedMedication?.let { medViewModel.insert(it) }
-                        medViewModel.clearScannedMedication()
-                    }
-                ) {
-                    Text("Confirm")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { medViewModel.clearScannedMedication() }) {
-                    Text("Cancel")
-                }
-            }
-        )
+            )
+        }
     }
 
     val launcher = rememberLauncherForActivityResult(
@@ -266,12 +291,23 @@ fun DashboardScreen(
         drawerContent = {
             DrawerContent(
                 selectedTab = selectedTab,
+                userProfile = userProfile,
+                family = family,
+                isGuest = isGuest,
                 onPrescriptionClick = {
                     selectedTab = "prescription"
                     scope.launch { drawerState.close() }
                 },
                 onHydrationClick = {
                     selectedTab = "hydration"
+                    scope.launch { drawerState.close() }
+                },
+                onStepClick = {
+                    selectedTab = "steps"
+                    scope.launch { drawerState.close() }
+                },
+                onSignOutClick = {
+                    authViewModel.signOut()
                     scope.launch { drawerState.close() }
                 }
             )
@@ -280,7 +316,15 @@ fun DashboardScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(if (selectedTab == "prescription") "Prescriptions" else "Hydration") },
+                    title = { 
+                        Text(
+                            when(selectedTab) {
+                                "prescription" -> "Prescriptions"
+                                "hydration" -> "Hydration"
+                                else -> "Step Counter"
+                            }
+                        ) 
+                    },
                     navigationIcon = {
                         IconButton(onClick = onMenuClick) {
                             Icon(
@@ -314,6 +358,12 @@ fun DashboardScreen(
                         selected = selectedTab == "hydration",
                         onClick = { selectedTab = "hydration" }
                     )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = "Steps") },
+                        label = { Text("Steps") },
+                        selected = selectedTab == "steps",
+                        onClick = { selectedTab = "steps" }
+                    )
                 }
             }
         ) { padding ->
@@ -323,55 +373,247 @@ fun DashboardScreen(
                     .padding(padding)
                     .padding(16.dp)
             ) {
-                if (selectedTab == "prescription") {
-                    Text("Prescription Scanner", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(modifier = Modifier.height(16.dp))
+                when (selectedTab) {
+                    "prescription" -> {
+                        Text("Prescription Scanner", style = MaterialTheme.typography.headlineMedium)
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            onClick = onScanPrescription,
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(4.dp)
-                        ) {
-                            Icon(Icons.Default.LocalPharmacy, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Scan", style = MaterialTheme.typography.labelMedium)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = onScanPrescription,
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(4.dp)
+                            ) {
+                                Icon(Icons.Default.LocalPharmacy, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text("Scan", style = MaterialTheme.typography.labelMedium)
+                            }
+                            Button(
+                                onClick = onSelectFromGallery,
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(4.dp)
+                            ) {
+                                Text("Gallery", style = MaterialTheme.typography.labelMedium)
+                            }
                         }
-                        Button(
-                            onClick = onSelectFromGallery,
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Text("Medication Schedule", style = MaterialTheme.typography.titleLarge)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        LazyColumn(
                             modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Gallery", style = MaterialTheme.typography.labelMedium)
+                            items(medications) { med ->
+                                MedicationItem(med) { medViewModel.markAsTaken(med) }
+                            }
                         }
                     }
+                    "hydration" -> {
+                        Text("Hydration Tracking", style = MaterialTheme.typography.headlineMedium)
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                        WaterCard(
+                            log = waterLog,
+                            settings = waterSettings,
+                            onAdd = { amount -> waterViewModel.addWater(amount) },
+                            onRemove = { amount -> waterViewModel.removeWater(amount) },
+                            onUpdateSettings = { goal, quick, interval -> waterViewModel.updateSettings(goal, quick, interval) }
+                        )
+                    }
+                    "steps" -> {
+                        Text("Step Counter", style = MaterialTheme.typography.headlineMedium)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        StepCard(
+                            log = stepLog,
+                            settings = stepSettings,
+                            onUpdateGoal = { goal: Int -> stepViewModel.updateGoal(goal) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
-                    Text("Medication Schedule", style = MaterialTheme.typography.titleLarge)
+@Composable
+fun StepCard(
+    log: StepLog?,
+    settings: StepSettings,
+    onUpdateGoal: (Int) -> Unit
+) {
+    var showGoalDialog by remember { mutableStateOf(false) }
+    val progress = ((log?.count ?: 0) / settings.dailyGoal.toFloat()).coerceIn(0f, 1f)
+    val primaryColor = MaterialTheme.colorScheme.primary
+
+    if (showGoalDialog) {
+        var goalText by remember { mutableStateOf(settings.dailyGoal.toString()) }
+        AlertDialog(
+            onDismissRequest = { showGoalDialog = false },
+            title = { Text("Set Daily Step Goal") },
+            text = {
+                TextField(
+                    value = goalText,
+                    onValueChange = { goalText = it.filter { c -> c.isDigit() } },
+                    label = { Text("Daily Steps") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onUpdateGoal(goalText.toIntOrNull() ?: 5000)
+                    showGoalDialog = false
+                }) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showGoalDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        "Step Counter",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Every step counts towards a healthier you!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = { showGoalDialog = true }) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = primaryColor)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Aesthetic Shoe and Meter
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(200.dp)
+            ) {
+                // Circular Progress Meter
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val strokeWidth = 12.dp.toPx()
+                    // Background track
+                    drawArc(
+                        color = primaryColor.copy(alpha = 0.1f),
+                        startAngle = 135f,
+                        sweepAngle = 270f,
+                        useCenter = false,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(
+                            width = strokeWidth,
+                            cap = StrokeCap.Round
+                        )
+                    )
+                    // Progress arc
+                    drawArc(
+                        color = primaryColor,
+                        startAngle = 135f,
+                        sweepAngle = 270f * progress,
+                        useCenter = false,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(
+                            width = strokeWidth,
+                            cap = StrokeCap.Round
+                        )
+                    )
+                }
+
+                // Walking Shoe in the middle
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(modifier = Modifier.size(80.dp), contentAlignment = Alignment.Center) {
+                        // Motion Lines
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            val lineLength = 15.dp.toPx()
+                            val spacing = 8.dp.toPx()
+                            // Three lines below the shoe
+                            for (i in 0..2) {
+                                drawLine(
+                                    color = primaryColor.copy(alpha = 0.4f),
+                                    start = androidx.compose.ui.geometry.Offset(
+                                        x = size.width / 2 - (i - 1) * spacing,
+                                        y = size.height / 2 + 35.dp.toPx()
+                                    ),
+                                    end = androidx.compose.ui.geometry.Offset(
+                                        x = size.width / 2 - (i - 1) * spacing - lineLength,
+                                        y = size.height / 2 + 45.dp.toPx()
+                                    ),
+                                    strokeWidth = 3.dp.toPx(),
+                                    cap = StrokeCap.Round
+                                )
+                            }
+                        }
+
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(60.dp)
+                                .graphicsLayer(
+                                    rotationZ = -15f, // Tilted up "walking" look
+                                    translationY = -10f
+                                ),
+                            tint = primaryColor
+                        )
+                    }
+                    
                     Spacer(modifier = Modifier.height(8.dp))
-
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(medications) { med ->
-                            MedicationItem(med) { medViewModel.markAsTaken(med) }
-                        }
-                    }
-                } else {
-                    Text("Hydration Tracking", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    WaterCard(
-                        log = waterLog,
-                        onAdd = { amount -> waterViewModel.addWater(amount) },
-                        onRemove = { amount -> waterViewModel.removeWater(amount) },
-                        onSetReminder = { interval -> waterViewModel.setWaterReminderInterval(interval) },
-                        onCancelReminders = { waterViewModel.cancelWaterReminders() }
+                    
+                    Text(
+                        "${log?.count ?: 0}",
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = primaryColor
+                    )
+                    Text(
+                        "of ${settings.dailyGoal} steps",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Progress percentage
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(8.dp),
+                color = primaryColor,
+                trackColor = primaryColor.copy(alpha = 0.1f)
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                "${(progress * 100).toInt()}% of your goal",
+                style = MaterialTheme.typography.bodySmall,
+                color = primaryColor,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -379,113 +621,140 @@ fun DashboardScreen(
 @Composable
 fun WaterCard(
     log: WaterLog?,
+    settings: WaterSettings,
     onAdd: (Int) -> Unit,
     onRemove: (Int) -> Unit,
-    onSetReminder: (Long) -> Unit,
-    onCancelReminders: () -> Unit
+    onUpdateSettings: (Int, Int, Long) -> Unit
 ) {
-    var showIntervalDialog by remember { mutableStateOf(false) }
-    var interval by remember { mutableStateOf("") }
-    val context = LocalContext.current
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    val progress = ((log?.amount ?: 0) / settings.dailyGoal.toFloat()).coerceIn(0f, 1f)
 
-    var goal by rememberSaveable { mutableStateOf("1000") }
-    var addAmount by rememberSaveable { mutableStateOf("250") }
-
-    val goalInt = goal.toIntOrNull()?.coerceIn(1, 5000) ?: 1000
-    val addAmountInt = addAmount.toIntOrNull() ?: 250
-
-    val onSetReminderClick = {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            if (alarmManager.canScheduleExactAlarms()) {
-                showIntervalDialog = true
-            } else {
-                Intent().also { intent ->
-                    intent.action = Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
-                    intent.data = Uri.fromParts("package", context.packageName, null)
-                    context.startActivity(intent)
-                }
-            }
-        } else {
-            showIntervalDialog = true
-        }
-    }
-
-    if (showIntervalDialog) {
-        AlertDialog(
-            onDismissRequest = { showIntervalDialog = false },
-            title = { Text("Set Reminder Interval") },
-            text = {
-                TextField(
-                    value = interval,
-                    onValueChange = { interval = it },
-                    label = { Text("Interval in minutes") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val intervalLong = interval.toLongOrNull()
-                        if (intervalLong != null) {
-                            onSetReminder(intervalLong)
-                        }
-                        showIntervalDialog = false
-                    }
-                ) {
-                    Text("Set")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showIntervalDialog = false }) {
-                    Text("Cancel")
-                }
+    if (showSettingsDialog) {
+        WaterSettingsDialog(
+            currentSettings = settings,
+            onDismiss = { showSettingsDialog = false },
+            onConfirm = { goal, quick, interval ->
+                onUpdateSettings(goal, quick, interval)
+                showSettingsDialog = false
             }
         )
     }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Hydration Status", style = MaterialTheme.typography.titleMedium)
-            
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextField(
-                    value = goal,
-                    onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) goal = it },
-                    label = { Text("Goal (ml)") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
-                TextField(
-                    value = addAmount,
-                    onValueChange = { if (it.length <= 4 && it.all { c -> c.isDigit() }) addAmount = it },
-                    label = { Text("Add (ml)") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        "Daily Hydration",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Keep it up! You're doing great.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = { showSettingsDialog = true }) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = MaterialTheme.colorScheme.primary)
+                }
             }
 
-            Text("${log?.amount ?: 0} / $goalInt ml", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
-            
-            LinearProgressIndicator(
-                progress = { ((log?.amount ?: 0) / goalInt.toFloat()).coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().height(8.dp),
-                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-            )
-            
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { onAdd(addAmountInt) }, modifier = Modifier.weight(1f)) { Text("Add ${addAmountInt}ml") }
-                Button(onClick = { onRemove(addAmountInt) }, modifier = Modifier.weight(1f)) { Text("Remove") }
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Aesthetic Progress Indicator
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(160.dp)
+            ) {
+                // Background Circle
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                ) {}
+                
+                // Progress "Water" Effect (Simplified)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .fillMaxHeight(0.9f * progress)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            color = Color(0xFF2196F3).copy(alpha = 0.6f),
+                            shape = CircleShape
+                        )
+                )
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "${log?.amount ?: 0}",
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        "of ${settings.dailyGoal} ml",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { onRemove(settings.quickAddAmount) },
+                    modifier = Modifier.weight(1f),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("Undo")
+                }
+                Button(
+                    onClick = { onAdd(settings.quickAddAmount) },
+                    modifier = Modifier.weight(2f),
+                    shape = MaterialTheme.shapes.medium,
+                    elevation = androidx.compose.material3.ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                ) {
+                    Icon(Icons.Default.WaterDrop, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Add ${settings.quickAddAmount}ml")
+                }
             }
             
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { onSetReminderClick() }, modifier = Modifier.weight(1f)) {
-                    Text("Set Reminder")
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { onAdd(500) },
+                    modifier = Modifier.weight(1f),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("+500ml")
                 }
-                Button(onClick = onCancelReminders, modifier = Modifier.weight(1f)) {
-                    Text("Stop Reminders")
+                OutlinedButton(
+                    onClick = { onAdd(1000) },
+                    modifier = Modifier.weight(1f),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("+1L")
                 }
             }
         }
@@ -493,36 +762,155 @@ fun WaterCard(
 }
 
 @Composable
+fun WaterSettingsDialog(
+    currentSettings: WaterSettings,
+    onDismiss: () -> Unit,
+    onConfirm: (Int, Int, Long) -> Unit
+) {
+    var goal by remember { mutableStateOf(currentSettings.dailyGoal.toString()) }
+    var quickAdd by remember { mutableStateOf(currentSettings.quickAddAmount.toString()) }
+    var interval by remember { mutableStateOf(currentSettings.reminderInterval.toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Hydration Settings") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                TextField(
+                    value = goal,
+                    onValueChange = { goal = it.filter { c -> c.isDigit() } },
+                    label = { Text("Daily Goal (ml)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextField(
+                    value = quickAdd,
+                    onValueChange = { quickAdd = it.filter { c -> c.isDigit() } },
+                    label = { Text("Quick Add Amount (ml)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextField(
+                    value = interval,
+                    onValueChange = { interval = it.filter { c -> c.isDigit() } },
+                    label = { Text("Reminder Interval (min, 0 to disable)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(
+                        goal.toIntOrNull() ?: 2000,
+                        quickAdd.toIntOrNull() ?: 250,
+                        interval.toLongOrNull() ?: 0L
+                    )
+                }
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
 fun MedicationItem(med: Medication, onTaken: () -> Unit) {
     val timeFormatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val dateFormatter = remember { SimpleDateFormat("MMM dd", Locale.getDefault()) }
     val scheduledTimeStr = remember(med.scheduledTime) { timeFormatter.format(Date(med.scheduledTime)) }
+    val endDateStr = remember(med.endDate) { dateFormatter.format(Date(med.endDate)) }
 
-    Card(
-        modifier = Modifier.fillMaxWidth()
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.LocalPharmacy,
+                        contentDescription = null,
+                        tint = if (med.isTaken) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        med.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        textDecoration = if (med.isTaken) TextDecoration.LineThrough else null,
+                        color = if (med.isTaken) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
                 Text(
-                    med.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    textDecoration = if (med.isTaken) TextDecoration.LineThrough else null,
-                    color = if (med.isTaken) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                    "${med.dosage} • ${med.quantity} tab(s) • ${med.frequency}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    "${med.dosage} • ${med.frequency} • $scheduledTimeStr",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "Next: $scheduledTimeStr",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Icon(
+                        Icons.Default.CalendarMonth,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.outline
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "Until: $endDateStr",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            }
+            
+            IconButton(
+                onClick = onTaken,
+                enabled = !med.isTaken,
+                modifier = Modifier
+                    .background(
+                        if (med.isTaken) MaterialTheme.colorScheme.surfaceVariant 
+                        else MaterialTheme.colorScheme.primaryContainer,
+                        CircleShape
+                    )
+                    .size(40.dp)
+            ) {
+                Icon(
+                    if (med.isTaken) Icons.Default.Check else Icons.Default.Add,
+                    contentDescription = "Mark Taken",
+                    tint = if (med.isTaken) MaterialTheme.colorScheme.outline 
+                           else MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(24.dp)
                 )
             }
-            Checkbox(
-                checked = med.isTaken,
-                onCheckedChange = { if (it) onTaken() },
-                enabled = !med.isTaken
-            )
         }
     }
 }

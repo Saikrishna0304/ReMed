@@ -16,6 +16,7 @@ class AlarmScheduler(private val context: Context) {
 
     fun scheduleMedicationReminder(medication: Medication) {
         val intent = Intent(context, MedicationReminderReceiver::class.java).apply {
+            putExtra("med_id", medication.id)
             putExtra("med_name", medication.name)
             putExtra("dosage", medication.dosage)
         }
@@ -29,6 +30,28 @@ class AlarmScheduler(private val context: Context) {
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             medication.scheduledTime,
+            pendingIntent
+        )
+    }
+
+    fun scheduleFollowUp(medicationId: Int, medName: String) {
+        val intent = Intent(context, MedicationReminderReceiver::class.java).apply {
+            putExtra("med_id", medicationId)
+            putExtra("med_name", medName)
+            putExtra("is_follow_up", true)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            medicationId + 100000, // Unique ID for follow-up
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Schedule for 5 minutes later
+        val fiveMinutesLater = System.currentTimeMillis() + (5 * 60 * 1000)
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            fiveMinutesLater,
             pendingIntent
         )
     }

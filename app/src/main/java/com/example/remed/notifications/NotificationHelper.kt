@@ -40,11 +40,19 @@ class NotificationHelper(private val context: Context) {
     }
 
     fun showWaterReminderNotification() {
-        val drankIntent = Intent(context, WaterReminderReceiver::class.java).apply {
+        val drank250Intent = Intent(context, WaterReminderReceiver::class.java).apply {
             action = "com.example.remed.ACTION_DRANK_WATER"
             putExtra("notification_id", WATER_REMINDER_NOTIFICATION_ID)
+            putExtra("amount", 250)
         }
-        val drankPendingIntent = PendingIntent.getBroadcast(context, 1, drankIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val drank250PendingIntent = PendingIntent.getBroadcast(context, 1, drank250Intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+        val drank500Intent = Intent(context, WaterReminderReceiver::class.java).apply {
+            action = "com.example.remed.ACTION_DRANK_WATER"
+            putExtra("notification_id", WATER_REMINDER_NOTIFICATION_ID)
+            putExtra("amount", 500)
+        }
+        val drank500PendingIntent = PendingIntent.getBroadcast(context, 3, drank500Intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
         val dismissIntent = Intent(context, WaterReminderReceiver::class.java).apply {
             action = "com.example.remed.ACTION_DISMISS"
@@ -55,12 +63,13 @@ class NotificationHelper(private val context: Context) {
 
         val notification = NotificationCompat.Builder(context, WATER_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_water_drop)
-            .setContentTitle("Hydration Reminder")
-            .setContentText("Did you drink water?")
+            .setContentTitle("Hydration Time! 💧")
+            .setContentText("Stay hydrated! How much water did you just drink?")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
-            .addAction(R.drawable.ic_water_drop, "Yes", drankPendingIntent)
-            .addAction(R.drawable.ic_water_drop, "No", dismissPendingIntent)
+            .addAction(R.drawable.ic_water_drop, "+250ml", drank250PendingIntent)
+            .addAction(R.drawable.ic_water_drop, "+500ml", drank500PendingIntent)
+            .addAction(R.drawable.ic_water_drop, "Later", dismissPendingIntent)
             .build()
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

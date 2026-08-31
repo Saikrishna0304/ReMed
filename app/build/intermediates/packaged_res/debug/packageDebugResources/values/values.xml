@@ -5,6 +5,12 @@
     <color name="splash_bg">#FFFFFFFF</color>
     <color name="white">#FFFFFFFF</color>
     <string name="app_name" translatable="false">ReMed</string>
+    <string name="gcm_defaultSenderId" translatable="false">420993533046</string>
+    <string name="google_api_key" translatable="false">AIzaSyDxpONnjZ5kJ6_I2JDBMIAyY65qjNnOh7Y</string>
+    <string name="google_app_id" translatable="false">1:420993533046:android:7f433a3a69f7c46f0b4b57</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyDxpONnjZ5kJ6_I2JDBMIAyY65qjNnOh7Y</string>
+    <string name="google_storage_bucket" translatable="false">remed-0304.firebasestorage.app</string>
+    <string name="project_id" translatable="false">remed-0304</string>
     <style name="Theme.ReMed" parent="android:Theme.Material.Light.NoActionBar"/>
     <style name="Theme.ReMed.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_bg</item>

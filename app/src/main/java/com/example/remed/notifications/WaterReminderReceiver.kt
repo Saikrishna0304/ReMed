@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import com.example.remed.data.ReMedDatabase
 import com.example.remed.data.ReMedRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -26,12 +27,14 @@ class WaterReminderReceiver : BroadcastReceiver() {
         val action = intent.action
         if (action == "com.example.remed.ACTION_DRANK_WATER") {
             val db = ReMedDatabase.getDatabase(context)
-            val repository = ReMedRepository(db.medicationDao(), db.waterDao())
+            val repository = ReMedRepository(db.medicationDao(), db.waterDao(), db.stepDao())
+            val amount = intent.getIntExtra("amount", 250)
+            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: "GUEST_USER"
             
             @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
             GlobalScope.launch {
                 val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                repository.updateWaterIntake(today, 100)
+                repository.updateWaterIntake(userId, today, amount)
             }
         }
     }
