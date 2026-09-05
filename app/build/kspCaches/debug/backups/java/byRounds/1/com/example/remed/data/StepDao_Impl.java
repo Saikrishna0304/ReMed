@@ -18,6 +18,7 @@ import java.lang.Object;
 import java.lang.Override;
 import java.lang.String;
 import java.lang.SuppressWarnings;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -170,6 +171,46 @@ public final class StepDao_Impl implements StepDao {
             _result = new StepLog(_tmpUserId,_tmpDate,_tmpCount);
           } else {
             _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+        }
+      }
+
+      @Override
+      protected void finalize() {
+        _statement.release();
+      }
+    });
+  }
+
+  @Override
+  public Flow<List<StepLog>> getRecentLogs(final String userId) {
+    final String _sql = "SELECT * FROM step_logs WHERE userId = ? ORDER BY date DESC LIMIT 7";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, userId);
+    return CoroutinesRoom.createFlow(__db, false, new String[] {"step_logs"}, new Callable<List<StepLog>>() {
+      @Override
+      @NonNull
+      public List<StepLog> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfUserId = CursorUtil.getColumnIndexOrThrow(_cursor, "userId");
+          final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+          final int _cursorIndexOfCount = CursorUtil.getColumnIndexOrThrow(_cursor, "count");
+          final List<StepLog> _result = new ArrayList<StepLog>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final StepLog _item;
+            final String _tmpUserId;
+            _tmpUserId = _cursor.getString(_cursorIndexOfUserId);
+            final String _tmpDate;
+            _tmpDate = _cursor.getString(_cursorIndexOfDate);
+            final int _tmpCount;
+            _tmpCount = _cursor.getInt(_cursorIndexOfCount);
+            _item = new StepLog(_tmpUserId,_tmpDate,_tmpCount);
+            _result.add(_item);
           }
           return _result;
         } finally {

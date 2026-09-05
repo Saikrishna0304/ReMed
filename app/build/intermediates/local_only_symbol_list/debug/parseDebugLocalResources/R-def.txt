@@ -1,6 +1,7 @@
 R_DEF: Internal format may change without notice
 local
 color black
+color ic_launcher_bg
 color logo_color
 color splash_bg
 color white

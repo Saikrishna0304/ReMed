@@ -50,6 +50,9 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 }
 
@@ -93,7 +96,6 @@ dependencies {
     implementation(libs.tensorflow.lite)
     implementation(libs.tensorflow.lite.support)
     implementation(libs.tensorflow.lite.metadata)
-    implementation(libs.tensorflow.lite.gpu)
     
     // CameraX
     implementation(libs.androidx.camera.core)

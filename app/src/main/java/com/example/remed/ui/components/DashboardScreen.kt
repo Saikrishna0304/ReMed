@@ -80,8 +80,20 @@ import com.example.remed.data.WaterLog
 import com.example.remed.ui.MedicationViewModel
 import com.example.remed.ui.WaterViewModel
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import kotlin.math.sin
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.background
@@ -103,6 +115,7 @@ import com.example.remed.data.StepSettings
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.geometry.Offset
 import com.example.remed.ui.components.MedicationEditScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -121,6 +134,7 @@ fun DashboardScreen(
     val waterLog by waterViewModel.waterLog.collectAsState()
     val waterSettings by waterViewModel.waterSettings.collectAsState()
     val stepLog by stepViewModel.stepLog.collectAsState()
+    val recentStepLogs by stepViewModel.recentLogs.collectAsState()
     val stepSettings by stepViewModel.stepSettings.collectAsState()
     val scannedMedication by medViewModel.scannedMedication.collectAsState()
     val userProfile by authViewModel.userProfile.collectAsState()
@@ -294,6 +308,9 @@ fun DashboardScreen(
                 userProfile = userProfile,
                 family = family,
                 isGuest = isGuest,
+                onUpdateProfile = { name, photoUrl ->
+                    authViewModel.updateProfile(name, photoUrl)
+                },
                 onPrescriptionClick = {
                     selectedTab = "prescription"
                     scope.launch { drawerState.close() }
@@ -429,6 +446,7 @@ fun DashboardScreen(
                         
                         StepCard(
                             log = stepLog,
+                            recentLogs = recentStepLogs,
                             settings = stepSettings,
                             onUpdateGoal = { goal: Int -> stepViewModel.updateGoal(goal) }
                         )
@@ -442,6 +460,7 @@ fun DashboardScreen(
 @Composable
 fun StepCard(
     log: StepLog?,
+    recentLogs: List<StepLog>,
     settings: StepSettings,
     onUpdateGoal: (Int) -> Unit
 ) {
@@ -543,45 +562,16 @@ fun StepCard(
                     )
                 }
 
-                // Walking Shoe in the middle
+                // Step Icon in the middle (matching bottom menu bar)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Box(modifier = Modifier.size(80.dp), contentAlignment = Alignment.Center) {
-                        // Motion Lines
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            val lineLength = 15.dp.toPx()
-                            val spacing = 8.dp.toPx()
-                            // Three lines below the shoe
-                            for (i in 0..2) {
-                                drawLine(
-                                    color = primaryColor.copy(alpha = 0.4f),
-                                    start = androidx.compose.ui.geometry.Offset(
-                                        x = size.width / 2 - (i - 1) * spacing,
-                                        y = size.height / 2 + 35.dp.toPx()
-                                    ),
-                                    end = androidx.compose.ui.geometry.Offset(
-                                        x = size.width / 2 - (i - 1) * spacing - lineLength,
-                                        y = size.height / 2 + 45.dp.toPx()
-                                    ),
-                                    strokeWidth = 3.dp.toPx(),
-                                    cap = StrokeCap.Round
-                                )
-                            }
-                        }
-
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(60.dp)
-                                .graphicsLayer(
-                                    rotationZ = -15f, // Tilted up "walking" look
-                                    translationY = -10f
-                                ),
-                            tint = primaryColor
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp),
+                        tint = primaryColor
+                    )
                     
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     
                     Text(
                         "${log?.count ?: 0}",
@@ -614,6 +604,72 @@ fun StepCard(
                 color = primaryColor,
                 fontWeight = FontWeight.Bold
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 7-Day History Section
+            Text(
+                "Past 7 Days History",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.align(Alignment.Start)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (recentLogs.isEmpty()) {
+                Text(
+                    "No history available yet. Start walking!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    recentLogs.sortedBy { it.date }.forEach { stepLogEntry ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                    shape = MaterialTheme.shapes.medium
+                                )
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stepLogEntry.date,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "${stepLogEntry.count} steps",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = primaryColor
+                                )
+                                if (stepLogEntry.count >= settings.dailyGoal) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = primaryColor.copy(alpha = 0.2f)
+                                    ) {
+                                        Text(
+                                            text = "Goal Met",
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = primaryColor
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -627,7 +683,6 @@ fun WaterCard(
     onUpdateSettings: (Int, Int, Long) -> Unit
 ) {
     var showSettingsDialog by remember { mutableStateOf(false) }
-    val progress = ((log?.amount ?: 0) / settings.dailyGoal.toFloat()).coerceIn(0f, 1f)
 
     if (showSettingsDialog) {
         WaterSettingsDialog(
@@ -670,48 +725,18 @@ fun WaterCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Aesthetic Progress Indicator
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.size(160.dp)
-            ) {
-                // Background Circle
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                ) {}
-                
-                // Progress "Water" Effect (Simplified)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .fillMaxHeight(0.9f * progress)
-                        .align(Alignment.BottomCenter)
-                        .background(
-                            color = Color(0xFF2196F3).copy(alpha = 0.6f),
-                            shape = CircleShape
-                        )
-                )
+            // Aesthetic Dynamic Bottle/Jug Hydration Visualizer
+            HydrationContainer(
+                amount = log?.amount ?: 0,
+                goal = settings.dailyGoal,
+                modifier = Modifier
+                    .size(220.dp, 240.dp)
+                    .padding(vertical = 4.dp)
+            )
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "${log?.amount ?: 0}",
-                        style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        "of ${settings.dailyGoal} ml",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -756,6 +781,297 @@ fun WaterCard(
                 ) {
                     Text("+1L")
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun HydrationContainer(
+    amount: Int,
+    goal: Int,
+    modifier: Modifier = Modifier
+) {
+    val rawProgress = if (goal > 0) amount / goal.toFloat() else 0f
+    val visualProgress = rawProgress.coerceIn(0f, 1f)
+    val percentage = (rawProgress * 100).toInt()
+    val isJug = goal > 2250
+
+    val animatedProgress by animateFloatAsState(
+        targetValue = visualProgress,
+        animationSpec = tween(durationMillis = 800, easing = LinearEasing),
+        label = "waterProgress"
+    )
+
+    val infiniteTransition = rememberInfiniteTransition(label = "waveTransition")
+    val wavePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2f * Math.PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = LinearEasing)
+        ),
+        label = "wavePhase"
+    )
+
+    val outlineColor = MaterialTheme.colorScheme.onSurface
+    val greyFillColor = MaterialTheme.colorScheme.surfaceVariant
+    val waterCyanColor = Color(0xFF80DEEA) // Bright cyan water tone matching reference image
+    val waterCrestColor = Color(0xFFB2EBF2)
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val strokePx = 3.5.dp.toPx()
+
+            if (!isJug) {
+                // ==================== BOTTLE (<= 2250ml) ====================
+                val capPath = Path().apply {
+                    moveTo(0.40f * w, 0.04f * h)
+                    lineTo(0.60f * w, 0.04f * h)
+                    lineTo(0.60f * w, 0.11f * h)
+                    lineTo(0.40f * w, 0.11f * h)
+                    close()
+                }
+
+                val ringPath = Path().apply {
+                    moveTo(0.42f * w, 0.12f * h)
+                    lineTo(0.58f * w, 0.12f * h)
+                    lineTo(0.58f * w, 0.15f * h)
+                    lineTo(0.42f * w, 0.15f * h)
+                    close()
+                }
+
+                val bodyPath = Path().apply {
+                    moveTo(0.44f * w, 0.16f * h)
+                    lineTo(0.56f * w, 0.16f * h)
+                    lineTo(0.70f * w, 0.28f * h) // Right shoulder slope
+                    lineTo(0.70f * w, 0.88f * h) // Right vertical side
+                    cubicTo(0.70f * w, 0.94f * h, 0.64f * w, 0.95f * h, 0.58f * w, 0.95f * h) // Bottom right corner
+                    lineTo(0.42f * w, 0.95f * h) // Base
+                    cubicTo(0.36f * w, 0.95f * h, 0.30f * w, 0.94f * h, 0.30f * w, 0.88f * h) // Bottom left corner
+                    lineTo(0.30f * w, 0.28f * h) // Left vertical side
+                    close()
+                }
+
+                // 1. Fill water inside bottle body ONLY
+                val bottomY = 0.94f * h
+                val topY = 0.28f * h
+                val waterLevelY = bottomY - (bottomY - topY) * animatedProgress
+
+                clipPath(bodyPath) {
+                    if (animatedProgress > 0.001f) {
+                        val waveAmplitude = 4.dp.toPx()
+                        val wavePath = Path()
+                        wavePath.moveTo(-10f, h + 10f)
+                        wavePath.lineTo(-10f, waterLevelY)
+
+                        var x = -10f
+                        val step = 3f
+                        while (x <= w + 10f) {
+                            val radians = ((x / w) * 2f * 2f * Math.PI.toFloat() + wavePhase)
+                            val y = waterLevelY + sin(radians) * waveAmplitude
+                            wavePath.lineTo(x, y)
+                            x += step
+                        }
+                        wavePath.lineTo(w + 10f, h + 10f)
+                        wavePath.close()
+
+                        drawPath(path = wavePath, color = waterCyanColor)
+
+                        // Light surface crest line
+                        val wavePath2 = Path()
+                        wavePath2.moveTo(-10f, h + 10f)
+                        wavePath2.lineTo(-10f, waterLevelY)
+                        var x2 = -10f
+                        while (x2 <= w + 10f) {
+                            val radians2 = ((x2 / w) * 2f * 2f * Math.PI.toFloat() + wavePhase + 1.5f)
+                            val y2 = waterLevelY + sin(radians2) * (waveAmplitude * 0.6f)
+                            wavePath2.lineTo(x2, y2)
+                            x2 += step
+                        }
+                        wavePath2.lineTo(w + 10f, h + 10f)
+                        wavePath2.close()
+
+                        drawPath(path = wavePath2, color = waterCrestColor.copy(alpha = 0.4f))
+                    }
+                }
+
+                // 2. Outlines & Details for Bottle
+                drawPath(path = capPath, color = greyFillColor)
+                drawPath(path = capPath, color = outlineColor, style = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+                drawPath(path = ringPath, color = greyFillColor)
+                drawPath(path = ringPath, color = outlineColor, style = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+                drawPath(path = bodyPath, color = outlineColor, style = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+                // Inner neck accent line
+                drawLine(
+                    color = outlineColor,
+                    start = Offset(0.44f * w, 0.20f * h),
+                    end = androidx.compose.ui.geometry.Offset(0.56f * w, 0.20f * h),
+                    strokeWidth = strokePx
+                )
+
+            } else {
+                // ==================== JUG (> 2250ml) - SHIFTED RIGHT & CENTERED ====================
+                val jugBodyPath = Path().apply {
+                    moveTo(0.30f * w, 0.08f * h) // Spout tip top-left
+                    cubicTo(0.36f * w, 0.12f * h, 0.46f * w, 0.13f * h, 0.66f * w, 0.13f * h) // Top rim opening
+                    lineTo(0.66f * w, 0.18f * h) // Top right neck
+                    cubicTo(
+                        0.66f * w, 0.32f * h,
+                        0.76f * w, 0.52f * h,
+                        0.72f * w, 0.88f * h
+                    ) // Right curved body
+                    cubicTo(0.72f * w, 0.91f * h, 0.64f * w, 0.92f * h, 0.50f * w, 0.92f * h) // Bottom right
+                    lineTo(0.48f * w, 0.92f * h)
+                    cubicTo(0.36f * w, 0.92f * h, 0.28f * w, 0.91f * h, 0.28f * w, 0.88f * h) // Bottom left
+                    cubicTo(
+                        0.24f * w, 0.52f * h,
+                        0.30f * w, 0.32f * h,
+                        0.30f * w, 0.18f * h
+                    ) // Left curved body
+                    close()
+                }
+
+                val handleOutlinePath = Path().apply {
+                    moveTo(0.66f * w, 0.18f * h)
+                    cubicTo(
+                        0.94f * w, 0.20f * h,
+                        0.94f * w, 0.52f * h,
+                        0.72f * w, 0.56f * h
+                    )
+                    lineTo(0.72f * w, 0.48f * h)
+                    cubicTo(
+                        0.84f * w, 0.45f * h,
+                        0.84f * w, 0.25f * h,
+                        0.66f * w, 0.24f * h
+                    )
+                    close()
+                }
+
+                val standPath = Path().apply {
+                    moveTo(0.28f * w, 0.88f * h)
+                    lineTo(0.72f * w, 0.88f * h)
+                    cubicTo(0.70f * w, 0.95f * h, 0.60f * w, 0.96f * h, 0.50f * w, 0.96f * h)
+                    cubicTo(0.40f * w, 0.96f * h, 0.30f * w, 0.95f * h, 0.28f * w, 0.88f * h)
+                    close()
+                }
+
+                // 1. Fill water inside Jug Body ONLY
+                val bottomY = 0.91f * h
+                val topY = 0.20f * h
+                val waterLevelY = bottomY - (bottomY - topY) * animatedProgress
+
+                clipPath(jugBodyPath) {
+                    if (animatedProgress > 0.001f) {
+                        val waveAmplitude = 4.dp.toPx()
+                        val wavePath = Path()
+                        wavePath.moveTo(-10f, h + 10f)
+                        wavePath.lineTo(-10f, waterLevelY)
+
+                        var x = -10f
+                        val step = 3f
+                        while (x <= w + 10f) {
+                            val radians = ((x / w) * 2f * 2f * Math.PI.toFloat() + wavePhase)
+                            val y = waterLevelY + sin(radians) * waveAmplitude
+                            wavePath.lineTo(x, y)
+                            x += step
+                        }
+                        wavePath.lineTo(w + 10f, h + 10f)
+                        wavePath.close()
+
+                        drawPath(path = wavePath, color = waterCyanColor)
+
+                        // Light surface crest line
+                        val wavePath2 = Path()
+                        wavePath2.moveTo(-10f, h + 10f)
+                        wavePath2.lineTo(-10f, waterLevelY)
+                        var x2 = -10f
+                        while (x2 <= w + 10f) {
+                            val radians2 = ((x2 / w) * 2f * 2f * Math.PI.toFloat() + wavePhase + 1.5f)
+                            val y2 = waterLevelY + sin(radians2) * (waveAmplitude * 0.6f)
+                            wavePath2.lineTo(x2, y2)
+                            x2 += step
+                        }
+                        wavePath2.lineTo(w + 10f, h + 10f)
+                        wavePath2.close()
+
+                        drawPath(path = wavePath2, color = waterCrestColor.copy(alpha = 0.4f))
+                    }
+                }
+
+                // 2. Stand & Handle fills
+                drawPath(path = standPath, color = greyFillColor)
+                drawPath(path = standPath, color = outlineColor, style = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+                drawPath(path = handleOutlinePath, color = greyFillColor)
+                drawPath(path = handleOutlinePath, color = outlineColor, style = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+                // 3. Main Jug Body Outline
+                drawPath(path = jugBodyPath, color = outlineColor, style = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+                // 4. Accent Lines as in Reference Image
+                // Upper neck rim horizontal line
+                drawLine(
+                    color = outlineColor,
+                    start = Offset(0.30f * w, 0.18f * h),
+                    end = Offset(0.66f * w, 0.18f * h),
+                    strokeWidth = strokePx
+                )
+
+                // Lower body horizontal line
+                drawLine(
+                    color = outlineColor,
+                    start = Offset(0.28f * w, 0.78f * h),
+                    end = Offset(0.72f * w, 0.78f * h),
+                    strokeWidth = strokePx
+                )
+
+                // Vertical glass reflection streak line
+                drawLine(
+                    color = outlineColor,
+                    start = Offset(0.34f * w, 0.32f * h),
+                    end = Offset(0.32f * w, 0.55f * h),
+                    strokeWidth = strokePx
+                )
+            }
+        }
+
+        // Text Overlay inside container - aligned directly in the middle of the jug body
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(top = 32.dp)
+        ) {
+            Text(
+                "$amount",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                "of $goal ml",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = CircleShape
+            ) {
+                Text(
+                    text = "$percentage% Consumed",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
+                )
             }
         }
     }

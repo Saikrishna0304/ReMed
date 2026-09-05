@@ -6,7 +6,8 @@ data class UserProfile(
     val email: String = "",
     val phoneNumber: String = "",
     val familyId: String? = null,
-    val role: String = "member" // "parent" or "member"
+    val role: String = "member", // "parent" or "member"
+    val photoUrl: String? = null
 )
 
 data class Family(

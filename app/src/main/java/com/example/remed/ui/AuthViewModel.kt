@@ -105,6 +105,16 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
         }
     }
 
+    fun updateProfile(name: String, photoUrl: String?) = viewModelScope.launch {
+        val current = _userProfile.value ?: UserProfile(uid = currentUser.value?.uid ?: GUEST_USER_ID)
+        val updated = current.copy(name = name, photoUrl = photoUrl)
+        _userProfile.value = updated
+
+        if (!_isGuestMode.value && currentUser.value != null) {
+            repository.updateUserProfile(updated)
+        }
+    }
+
     fun createFamily(familyName: String) = viewModelScope.launch {
         currentUser.value?.let { user ->
             val familyId = UUID.randomUUID().toString()

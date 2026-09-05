@@ -3,5 +3,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
     <color name="splash_bg">#FFFFFFFF</color>
-    <color name="logo_color">#FF1A1C1E</color>
+    <color name="logo_color">#FF111918</color>
+    <color name="ic_launcher_bg">#FF0D9488</color>
 </resources>

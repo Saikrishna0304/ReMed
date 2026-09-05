@@ -8,7 +8,6 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.remed.data.AuthRepository
 import com.example.remed.data.ReMedRepository
 import com.example.remed.data.StepLog
 import com.example.remed.data.StepSettings
@@ -23,6 +22,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.sqrt
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class StepViewModel(
@@ -34,7 +34,18 @@ class StepViewModel(
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     private val today = dateFormat.format(Date())
     private val sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+
+    private var initialStepCount = -1f
+
+    // Accelerometer Pedometer Algorithm variables
+    private var smoothAccel = 9.81f
+    private var isPeak = false
+    private var lastStepTimeMs = 0L
+
+    private val alpha = 0.8f // Exponential Moving Average smoothing factor
+    private val stepThreshold = 11.5f // Upper acceleration peak threshold (m/s^2)
+    private val resetThreshold = 10.2f // Lower threshold to re-arm peak detector
+    private val minStepIntervalMs = 280L // Minimum time between steps (~214 steps/min max)
 
     val stepLog: StateFlow<StepLog?> = userIdFlow
         .flatMapLatest { uid ->
@@ -42,6 +53,13 @@ class StepViewModel(
             else flowOf(null)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val recentLogs: StateFlow<List<StepLog>> = userIdFlow
+        .flatMapLatest { uid ->
+            if (uid != null) repository.getRecentStepLogs(uid)
+            else flowOf(emptyList())
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val stepSettings: StateFlow<StepSettings> = userIdFlow
         .flatMapLatest { uid ->
@@ -51,17 +69,74 @@ class StepViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StepSettings(userId = ""))
 
     init {
-        stepSensor?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_UI)
+        val accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        val stepDetectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+        val stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+
+        // Register Accelerometer for universal real-time step tracking
+        accelSensor?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
+        }
+
+        // Register Hardware Step Detector if available
+        stepDetectorSensor?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+
+        // Register Hardware Step Counter if available
+        stepCounterSensor?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
-        if (event?.sensor?.type == Sensor.TYPE_STEP_COUNTER) {
-            // Step counter gives total steps since last boot. 
-            // For simplicity, we'll increment by 1 each time it triggers (actual counter is more complex)
-            // But let's assume we just add to our local count if we detect movement.
-            // Note: TYPE_STEP_DETECTOR might be better for increments.
+        val sensorType = event?.sensor?.type ?: return
+        val now = System.currentTimeMillis()
+
+        when (sensorType) {
+            Sensor.TYPE_ACCELEROMETER -> {
+                val x = event.values[0]
+                val y = event.values[1]
+                val z = event.values[2]
+
+                val accel = sqrt((x * x + y * y + z * z).toDouble()).toFloat()
+                smoothAccel = alpha * smoothAccel + (1f - alpha) * accel
+
+                if (smoothAccel > stepThreshold) {
+                    if (!isPeak && (now - lastStepTimeMs) >= minStepIntervalMs) {
+                        isPeak = true
+                        lastStepTimeMs = now
+                        addSteps(1)
+                    }
+                } else if (smoothAccel < resetThreshold) {
+                    isPeak = false
+                }
+            }
+
+            Sensor.TYPE_STEP_DETECTOR -> {
+                if (event.values[0] == 1.0f) {
+                    if ((now - lastStepTimeMs) >= minStepIntervalMs) {
+                        lastStepTimeMs = now
+                        addSteps(1)
+                    }
+                }
+            }
+
+            Sensor.TYPE_STEP_COUNTER -> {
+                val totalStepsSinceBoot = event.values[0]
+                if (initialStepCount < 0f) {
+                    initialStepCount = totalStepsSinceBoot
+                } else {
+                    val delta = (totalStepsSinceBoot - initialStepCount).toInt()
+                    if (delta > 0) {
+                        initialStepCount = totalStepsSinceBoot
+                        if ((now - lastStepTimeMs) >= minStepIntervalMs) {
+                            lastStepTimeMs = now
+                            addSteps(delta)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -69,7 +144,7 @@ class StepViewModel(
 
     fun addSteps(steps: Int) = viewModelScope.launch {
         val uid = userIdFlow.value
-        if (uid != null) {
+        if (uid != null && steps > 0) {
             repository.updateStepCount(uid, today, steps)
         }
     }

@@ -40,6 +40,10 @@ class AuthRepository {
         firestore.collection("users").document(profile.uid).set(profile).await()
     }
 
+    suspend fun updateUserProfile(profile: UserProfile) {
+        firestore.collection("users").document(profile.uid).set(profile).await()
+    }
+
     suspend fun getFamily(familyId: String): Family? {
         return try {
             firestore.collection("families").document(familyId).get().await().toObject(Family::class.java)

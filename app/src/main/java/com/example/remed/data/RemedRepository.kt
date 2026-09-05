@@ -42,6 +42,8 @@ class ReMedRepository(
     // Steps
     fun getStepLog(userId: String, date: String): Flow<StepLog?> = stepDao.getLogForDate(userId, date)
 
+    fun getRecentStepLogs(userId: String): Flow<List<StepLog>> = stepDao.getRecentLogs(userId)
+
     suspend fun updateStepCount(userId: String, date: String, steps: Int) {
         val log = stepDao.getLog(userId, date)
         if (log != null) {

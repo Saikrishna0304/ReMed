@@ -12,6 +12,9 @@ interface StepDao {
     @Query("SELECT * FROM step_logs WHERE userId = :userId AND date = :date")
     fun getLogForDate(userId: String, date: String): Flow<StepLog?>
 
+    @Query("SELECT * FROM step_logs WHERE userId = :userId ORDER BY date DESC LIMIT 7")
+    fun getRecentLogs(userId: String): Flow<List<StepLog>>
+
     @Query("SELECT * FROM step_logs WHERE userId = :userId AND date = :date")
     suspend fun getLog(userId: String, date: String): StepLog?
 
