@@ -35,17 +35,16 @@ class StepViewModel(
     private val today = dateFormat.format(Date())
     private val sensorManager = application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-    private var initialStepCount = -1f
-
-    // Accelerometer Pedometer Algorithm variables
-    private var smoothAccel = 9.81f
-    private var isPeak = false
+    private var initialHardwareStepCount = -1f
     private var lastStepTimeMs = 0L
 
-    private val alpha = 0.8f // Exponential Moving Average smoothing factor
-    private val stepThreshold = 11.5f // Upper acceleration peak threshold (m/s^2)
-    private val resetThreshold = 10.2f // Lower threshold to re-arm peak detector
-    private val minStepIntervalMs = 280L // Minimum time between steps (~214 steps/min max)
+    // Accelerometer Adaptive Peak Detection Variables
+    private var filteredGravity = 9.81f
+    private var isPeakHigh = false
+    private val alpha = 0.8f
+    private val minStepIntervalMs = 250L // max ~240 steps/min
+    private val peakThreshold = 1.8f      // linear acceleration peak threshold (m/s^2)
+    private val resetThreshold = 0.5f     // re-arm threshold (m/s^2)
 
     val stepLog: StateFlow<StepLog?> = userIdFlow
         .flatMapLatest { uid ->
@@ -69,23 +68,27 @@ class StepViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StepSettings(userId = ""))
 
     init {
+        registerBestAvailableSensor()
+    }
+
+    private fun registerBestAvailableSensor() {
+        val stepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+        val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
         val accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        val stepDetectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
-        val stepCounterSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
-        // Register Accelerometer for universal real-time step tracking
-        accelSensor?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
-        }
-
-        // Register Hardware Step Detector if available
-        stepDetectorSensor?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
-        }
-
-        // Register Hardware Step Counter if available
-        stepCounterSensor?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+        when {
+            // Priority 1: Hardware Step Detector (Triggers per step)
+            stepDetector != null -> {
+                sensorManager.registerListener(this, stepDetector, SensorManager.SENSOR_DELAY_UI)
+            }
+            // Priority 2: Hardware Step Counter (Cumulative counter)
+            stepCounter != null -> {
+                sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_UI)
+            }
+            // Priority 3: Software Accelerometer Peak Detection Fallback
+            accelSensor != null -> {
+                sensorManager.registerListener(this, accelSensor, SensorManager.SENSOR_DELAY_GAME)
+            }
         }
     }
 
@@ -94,25 +97,6 @@ class StepViewModel(
         val now = System.currentTimeMillis()
 
         when (sensorType) {
-            Sensor.TYPE_ACCELEROMETER -> {
-                val x = event.values[0]
-                val y = event.values[1]
-                val z = event.values[2]
-
-                val accel = sqrt((x * x + y * y + z * z).toDouble()).toFloat()
-                smoothAccel = alpha * smoothAccel + (1f - alpha) * accel
-
-                if (smoothAccel > stepThreshold) {
-                    if (!isPeak && (now - lastStepTimeMs) >= minStepIntervalMs) {
-                        isPeak = true
-                        lastStepTimeMs = now
-                        addSteps(1)
-                    }
-                } else if (smoothAccel < resetThreshold) {
-                    isPeak = false
-                }
-            }
-
             Sensor.TYPE_STEP_DETECTOR -> {
                 if (event.values[0] == 1.0f) {
                     if ((now - lastStepTimeMs) >= minStepIntervalMs) {
@@ -124,17 +108,39 @@ class StepViewModel(
 
             Sensor.TYPE_STEP_COUNTER -> {
                 val totalStepsSinceBoot = event.values[0]
-                if (initialStepCount < 0f) {
-                    initialStepCount = totalStepsSinceBoot
+                if (initialHardwareStepCount < 0f) {
+                    initialHardwareStepCount = totalStepsSinceBoot
                 } else {
-                    val delta = (totalStepsSinceBoot - initialStepCount).toInt()
+                    val delta = (totalStepsSinceBoot - initialHardwareStepCount).toInt()
                     if (delta > 0) {
-                        initialStepCount = totalStepsSinceBoot
+                        initialHardwareStepCount = totalStepsSinceBoot
                         if ((now - lastStepTimeMs) >= minStepIntervalMs) {
                             lastStepTimeMs = now
                             addSteps(delta)
                         }
                     }
+                }
+            }
+
+            Sensor.TYPE_ACCELEROMETER -> {
+                val x = event.values[0]
+                val y = event.values[1]
+                val z = event.values[2]
+
+                val totalAccel = sqrt((x * x + y * y + z * z).toDouble()).toFloat()
+
+                // Exponential moving average filter to estimate gravity
+                filteredGravity = alpha * filteredGravity + (1f - alpha) * totalAccel
+                val linearAccel = totalAccel - filteredGravity
+
+                if (linearAccel > peakThreshold) {
+                    if (!isPeakHigh && (now - lastStepTimeMs) >= minStepIntervalMs) {
+                        isPeakHigh = true
+                        lastStepTimeMs = now
+                        addSteps(1)
+                    }
+                } else if (linearAccel < resetThreshold) {
+                    isPeakHigh = false
                 }
             }
         }

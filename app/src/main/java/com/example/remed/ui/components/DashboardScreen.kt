@@ -448,6 +448,7 @@ fun DashboardScreen(
                             log = stepLog,
                             recentLogs = recentStepLogs,
                             settings = stepSettings,
+                            onAddSteps = { steps -> stepViewModel.addSteps(steps) },
                             onUpdateGoal = { goal: Int -> stepViewModel.updateGoal(goal) }
                         )
                     }
@@ -462,6 +463,7 @@ fun StepCard(
     log: StepLog?,
     recentLogs: List<StepLog>,
     settings: StepSettings,
+    onAddSteps: (Int) -> Unit = {},
     onUpdateGoal: (Int) -> Unit
 ) {
     var showGoalDialog by remember { mutableStateOf(false) }
@@ -604,6 +606,33 @@ fun StepCard(
                 color = primaryColor,
                 fontWeight = FontWeight.Bold
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Quick Step Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                OutlinedButton(
+                    onClick = { onAddSteps(50) },
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("+50 steps")
+                }
+                OutlinedButton(
+                    onClick = { onAddSteps(100) },
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("+100 steps")
+                }
+                OutlinedButton(
+                    onClick = { onAddSteps(500) },
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("+500 steps")
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
