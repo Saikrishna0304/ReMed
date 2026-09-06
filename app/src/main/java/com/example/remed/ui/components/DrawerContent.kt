@@ -1,9 +1,14 @@
 package com.example.remed.ui.components
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Base64
+import java.io.ByteArrayOutputStream
+import java.util.Locale
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -20,6 +25,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
@@ -27,17 +35,22 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalPharmacy
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,6 +75,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -85,10 +99,11 @@ fun DrawerContent(
     userProfile: UserProfile?,
     family: Family?,
     isGuest: Boolean,
-    onUpdateProfile: (String, String?) -> Unit = { _, _ -> },
+    onUpdateProfile: (String, String?, String?, Int?, Float?, Float?) -> Unit = { _, _, _, _, _, _ -> },
     onPrescriptionClick: () -> Unit,
     onHydrationClick: () -> Unit,
     onStepClick: () -> Unit,
+    onKeepTrackClick: () -> Unit = {},
     onSignOutClick: () -> Unit
 ) {
     var showSettingsDialog by remember { mutableStateOf(false) }
@@ -126,6 +141,19 @@ fun DrawerContent(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
+                        val extraDetails = mutableListOf<String>()
+                        userProfile?.gender?.let { if (it.isNotBlank()) extraDetails.add(it) }
+                        userProfile?.age?.let { extraDetails.add("$it yrs") }
+                        userProfile?.bmi?.let { extraDetails.add("BMI: ${String.format(Locale.getDefault(), "%.1f", it)}") }
+
+                        if (extraDetails.isNotEmpty()) {
+                            Text(
+                                text = extraDetails.joinToString(" • "),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
                 IconButton(onClick = { showProfileDialog = true }) {
@@ -186,6 +214,18 @@ fun DrawerContent(
             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
         )
 
+        val isParent = (userProfile?.role == "parent") || (family != null && family.adminId == userProfile?.uid)
+
+        if (isParent) {
+            NavigationDrawerItem(
+                label = { Text("Family") },
+                selected = selectedTab == "keep_track",
+                onClick = onKeepTrackClick,
+                icon = { Icon(Icons.Default.Group, contentDescription = "Family") },
+                modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+            )
+        }
+
         Spacer(modifier = Modifier.weight(1f))
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -220,11 +260,10 @@ fun DrawerContent(
 
     if (showProfileDialog) {
         EditProfileDialog(
-            currentName = userProfile?.name ?: "",
-            currentPhotoUrl = userProfile?.photoUrl,
+            userProfile = userProfile,
             onDismiss = { showProfileDialog = false },
-            onSave = { name, photoUrl ->
-                onUpdateProfile(name, photoUrl)
+            onSave = { name, photoUrl, gender, age, weight, height ->
+                onUpdateProfile(name, photoUrl, gender, age, weight, height)
             }
         )
     }
@@ -242,15 +281,22 @@ fun ProfileAvatar(
     LaunchedEffect(photoUrl) {
         if (!photoUrl.isNullOrEmpty()) {
             try {
-                val uri = Uri.parse(photoUrl)
-                val loadedBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    val source = ImageDecoder.createSource(context.contentResolver, uri)
-                    ImageDecoder.decodeBitmap(source)
+                if (photoUrl.startsWith("data:image") || photoUrl.contains("base64,")) {
+                    val base64Data = photoUrl.substringAfter("base64,")
+                    val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
+                    val decodedBitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                    bitmap = decodedBitmap.asImageBitmap()
                 } else {
-                    @Suppress("DEPRECATION")
-                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                    val uri = Uri.parse(photoUrl)
+                    val loadedBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        val source = ImageDecoder.createSource(context.contentResolver, uri)
+                        ImageDecoder.decodeBitmap(source)
+                    } else {
+                        @Suppress("DEPRECATION")
+                        MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                    }
+                    bitmap = loadedBitmap.asImageBitmap()
                 }
-                bitmap = loadedBitmap.asImageBitmap()
             } catch (e: Exception) {
                 bitmap = null
             }
@@ -286,33 +332,52 @@ fun ProfileAvatar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileDialog(
-    currentName: String,
-    currentPhotoUrl: String?,
+    userProfile: UserProfile?,
     onDismiss: () -> Unit,
-    onSave: (String, String?) -> Unit
+    onSave: (String, String?, String?, Int?, Float?, Float?) -> Unit
 ) {
     val context = LocalContext.current
-    var name by remember { mutableStateOf(currentName) }
-    var photoUrl by remember { mutableStateOf(currentPhotoUrl) }
+    var name by remember { mutableStateOf(userProfile?.name ?: "") }
+    var photoUrl by remember { mutableStateOf(userProfile?.photoUrl) }
+    var gender by remember { mutableStateOf(userProfile?.gender ?: "Male") }
+    var ageText by remember { mutableStateOf(userProfile?.age?.toString() ?: "") }
+    var weightText by remember { mutableStateOf(userProfile?.weightKg?.toString() ?: "") }
+    var heightText by remember { mutableStateOf(userProfile?.heightCm?.toString() ?: "") }
+
+    var expandedGender by remember { mutableStateOf(false) }
+    val genderOptions = listOf("Male", "Female", "Other")
+
+    val currentWeight = weightText.toFloatOrNull()
+    val currentHeight = heightText.toFloatOrNull()
+    val liveBmi = remember(currentWeight, currentHeight) {
+        if (currentWeight != null && currentHeight != null && currentHeight > 0f && currentWeight > 0f) {
+            val hM = currentHeight / 100f
+            currentWeight / (hM * hM)
+        } else null
+    }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             try {
-                val inputStream = context.contentResolver.openInputStream(it)
-                if (inputStream != null) {
-                    val file = File(context.filesDir, "profile_photo_${System.currentTimeMillis()}.jpg")
-                    val outputStream = FileOutputStream(file)
-                    inputStream.use { input ->
-                        outputStream.use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                    photoUrl = Uri.fromFile(file).toString()
+                val loadedBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    val source = ImageDecoder.createSource(context.contentResolver, it)
+                    ImageDecoder.decodeBitmap(source)
+                } else {
+                    @Suppress("DEPRECATION")
+                    MediaStore.Images.Media.getBitmap(context.contentResolver, it)
                 }
+                
+                val scaledBitmap = Bitmap.createScaledBitmap(loadedBitmap, 200, 200, true)
+                val outputStream = ByteArrayOutputStream()
+                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+                val bytes = outputStream.toByteArray()
+                val base64Str = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                photoUrl = "data:image/jpeg;base64,$base64Str"
             } catch (e: Exception) {
                 photoUrl = it.toString()
             }
@@ -323,7 +388,7 @@ fun EditProfileDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                "Edit Profile",
+                "Edit Health Profile",
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleLarge
             )
@@ -331,37 +396,29 @@ fun EditProfileDialog(
         text = {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Profile Avatar with Camera Change Button
+                // Profile Avatar
                 Box(
                     contentAlignment = Alignment.BottomEnd,
                     modifier = Modifier
-                        .size(96.dp)
+                        .size(80.dp)
                         .clip(CircleShape)
                 ) {
-                    ProfileAvatar(
-                        photoUrl = photoUrl,
-                        size = 96.dp
-                    )
+                    ProfileAvatar(photoUrl = photoUrl, size = 80.dp)
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedButton(
                     onClick = { photoPickerLauncher.launch("image/*") },
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.PhotoCamera,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Change Photo")
+                    Icon(imageVector = Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Change Photo", style = MaterialTheme.typography.labelMedium)
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
 
                 OutlinedTextField(
                     value = name,
@@ -372,12 +429,109 @@ fun EditProfileDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium
                 )
+
+                // Gender & Age Row
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ExposedDropdownMenuBox(
+                        expanded = expandedGender,
+                        onExpandedChange = { expandedGender = !expandedGender },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        OutlinedTextField(
+                            value = gender,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Gender") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGender) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expandedGender,
+                            onDismissRequest = { expandedGender = false }
+                        ) {
+                            genderOptions.forEach { opt ->
+                                DropdownMenuItem(
+                                    text = { Text(opt) },
+                                    onClick = {
+                                        gender = opt
+                                        expandedGender = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = ageText,
+                        onValueChange = { ageText = it.filter { c -> c.isDigit() } },
+                        label = { Text("Age") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        shape = MaterialTheme.shapes.medium
+                    )
+                }
+
+                // Weight & Height Row
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = weightText,
+                        onValueChange = { weightText = it },
+                        label = { Text("Weight (kg)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        shape = MaterialTheme.shapes.medium
+                    )
+                    OutlinedTextField(
+                        value = heightText,
+                        onValueChange = { heightText = it },
+                        label = { Text("Height (cm)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                        shape = MaterialTheme.shapes.medium
+                    )
+                }
+
+                // Live Calculated BMI Badge
+                if (liveBmi != null) {
+                    val category = when {
+                        liveBmi < 18.5f -> "Underweight"
+                        liveBmi < 25.0f -> "Normal weight"
+                        liveBmi < 30.0f -> "Overweight"
+                        else -> "Obese"
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "BMI: ${String.format(Locale.getDefault(), "%.1f", liveBmi)} ($category)",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    onSave(name.trim(), photoUrl)
+                    onSave(
+                        name.trim(),
+                        photoUrl,
+                        gender,
+                        ageText.toIntOrNull(),
+                        weightText.toFloatOrNull(),
+                        heightText.toFloatOrNull()
+                    )
                     onDismiss()
                 },
                 enabled = name.isNotBlank()

@@ -26,10 +26,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.LocalPharmacy
-import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocalPharmacy
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -38,6 +42,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -146,123 +151,20 @@ fun DashboardScreen(
 
     var editingScannedMedication by remember { mutableStateOf<Medication?>(null) }
 
-    var showManualAddDialog by remember { mutableStateOf(false) }
-    var manualName by remember { mutableStateOf("") }
-    var manualDosage by remember { mutableStateOf("") }
-    var manualFrequency by remember { mutableStateOf("") }
-
-    val timeSlots = listOf(
-        "Early Morning (6am - 9am)" to 7,
-        "Morning (9am - 12pm)" to 10,
-        "Afternoon (12pm - 3pm)" to 13,
-        "Evening (3pm - 6pm)" to 16,
-        "Night (6pm - 9pm)" to 20
-    )
-    var selectedTimeSlot by remember { mutableStateOf(timeSlots[0]) }
-    var expanded by remember { mutableStateOf(false) }
-
-    if (showManualAddDialog) {
-        AlertDialog(
-            onDismissRequest = { showManualAddDialog = false },
-            title = { Text("Add Medication Manually") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextField(
-                        value = manualName,
-                        onValueChange = { manualName = it },
-                        label = { Text("Medication Name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    TextField(
-                        value = manualDosage,
-                        onValueChange = { manualDosage = it },
-                        label = { Text("Dosage (e.g. 500mg)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    TextField(
-                        value = manualFrequency,
-                        onValueChange = { manualFrequency = it },
-                        label = { Text("Frequency (e.g. Daily)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
-                    ) {
-                        TextField(
-                            value = selectedTimeSlot.first,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Reminder Time") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            modifier = Modifier.menuAnchor().fillMaxWidth()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            timeSlots.forEach { slot ->
-                                DropdownMenuItem(
-                                    text = { Text(slot.first) },
-                                    onClick = {
-                                        selectedTimeSlot = slot
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        if (manualName.isNotBlank()) {
-                            val calendar = java.util.Calendar.getInstance().apply {
-                                set(java.util.Calendar.HOUR_OF_DAY, selectedTimeSlot.second)
-                                set(java.util.Calendar.MINUTE, 0)
-                                set(java.util.Calendar.SECOND, 0)
-                                // If the time has already passed today, schedule for tomorrow
-                                if (timeInMillis < System.currentTimeMillis()) {
-                                    add(java.util.Calendar.DAY_OF_YEAR, 1)
-                                }
-                            }
-
-                            medViewModel.insert(
-                                Medication(
-                                    name = manualName,
-                                    dosage = manualDosage.ifBlank { "As prescribed" },
-                                    frequency = manualFrequency.ifBlank { "Daily" },
-                                    scheduledTime = calendar.timeInMillis
-                                )
-                            )
-                            showManualAddDialog = false
-                            manualName = ""
-                            manualDosage = ""
-                            manualFrequency = ""
-                        }
-                    }
-                ) {
-                    Text("Add")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showManualAddDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
     if (scannedMedication != null || editingScannedMedication != null) {
         val medToEdit = editingScannedMedication ?: scannedMedication!!
         
         Surface(modifier = Modifier.fillMaxSize()) {
             MedicationEditScreen(
                 initialMedication = medToEdit,
-                onSave = { updatedMed ->
-                    medViewModel.insert(updatedMed)
+                onSave = { updatedMeds ->
+                    updatedMeds.forEach { med ->
+                        if (med.id == 0) {
+                            medViewModel.insert(med)
+                        } else {
+                            medViewModel.update(med)
+                        }
+                    }
                     medViewModel.clearScannedMedication()
                     editingScannedMedication = null
                 },
@@ -272,33 +174,32 @@ fun DashboardScreen(
                 }
             )
         }
-    }
-
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            // Permission Accepted
-        } else {
-            // Permission Denied
+    } else {
+        val launcher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                // Permission Accepted
+            } else {
+                // Permission Denied
+            }
         }
-    }
 
-    LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when (PackageManager.PERMISSION_GRANTED) {
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) -> {
-                    // pass
-                }
-                else -> {
-                    launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        LaunchedEffect(Unit) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                when (PackageManager.PERMISSION_GRANTED) {
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) -> {
+                        // pass
+                    }
+                    else -> {
+                        launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
                 }
             }
         }
-    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -308,8 +209,8 @@ fun DashboardScreen(
                 userProfile = userProfile,
                 family = family,
                 isGuest = isGuest,
-                onUpdateProfile = { name, photoUrl ->
-                    authViewModel.updateProfile(name, photoUrl)
+                onUpdateProfile = { name, photoUrl, gender, age, weight, height ->
+                    authViewModel.updateProfile(name, photoUrl, gender, age, weight, height)
                 },
                 onPrescriptionClick = {
                     selectedTab = "prescription"
@@ -323,6 +224,10 @@ fun DashboardScreen(
                     selectedTab = "steps"
                     scope.launch { drawerState.close() }
                 },
+                onKeepTrackClick = {
+                    selectedTab = "keep_track"
+                    scope.launch { drawerState.close() }
+                },
                 onSignOutClick = {
                     authViewModel.signOut()
                     scope.launch { drawerState.close() }
@@ -334,13 +239,7 @@ fun DashboardScreen(
             topBar = {
                 TopAppBar(
                     title = { 
-                        Text(
-                            when(selectedTab) {
-                                "prescription" -> "Prescriptions"
-                                "hydration" -> "Hydration"
-                                else -> "Step Counter"
-                            }
-                        ) 
+                        Text("ReMed", fontWeight = FontWeight.Bold) 
                     },
                     navigationIcon = {
                         IconButton(onClick = onMenuClick) {
@@ -356,7 +255,16 @@ fun DashboardScreen(
             },
             floatingActionButton = {
                 if (selectedTab == "prescription") {
-                    FloatingActionButton(onClick = { showManualAddDialog = true }) {
+                    FloatingActionButton(
+                        onClick = {
+                            editingScannedMedication = Medication(
+                                name = "",
+                                dosage = "500mg",
+                                frequency = "1 Time Daily (Once a day)",
+                                scheduledTime = System.currentTimeMillis()
+                            )
+                        }
+                    ) {
                         Icon(Icons.Default.Add, contentDescription = "Add Medication")
                     }
                 }
@@ -416,7 +324,8 @@ fun DashboardScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        Text("Medication Schedule", style = MaterialTheme.typography.titleLarge)
+                        Text("Medication Schedule", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+
                         Spacer(modifier = Modifier.height(8.dp))
 
                         LazyColumn(
@@ -424,7 +333,12 @@ fun DashboardScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(medications) { med ->
-                                MedicationItem(med) { medViewModel.markAsTaken(med) }
+                                MedicationItem(
+                                    med = med,
+                                    onTaken = { medViewModel.markAsTaken(med) },
+                                    onEdit = { editingScannedMedication = med },
+                                    onDelete = { medViewModel.delete(med) }
+                                )
                             }
                         }
                     }
@@ -452,10 +366,14 @@ fun DashboardScreen(
                             onUpdateGoal = { goal: Int -> stepViewModel.updateGoal(goal) }
                         )
                     }
+                    "keep_track" -> {
+                        KeepTrackScreen(authViewModel = authViewModel)
+                    }
                 }
             }
         }
     }
+}
 }
 
 @Composable
@@ -606,33 +524,6 @@ fun StepCard(
                 color = primaryColor,
                 fontWeight = FontWeight.Bold
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Quick Step Action Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                OutlinedButton(
-                    onClick = { onAddSteps(50) },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text("+50 steps")
-                }
-                OutlinedButton(
-                    onClick = { onAddSteps(100) },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text("+100 steps")
-                }
-                OutlinedButton(
-                    onClick = { onAddSteps(500) },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text("+500 steps")
-                }
-            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -1166,11 +1057,18 @@ fun WaterSettingsDialog(
 }
 
 @Composable
-fun MedicationItem(med: Medication, onTaken: () -> Unit) {
-    val timeFormatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+fun MedicationItem(
+    med: Medication,
+    onTaken: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val timeFormatter = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
     val dateFormatter = remember { SimpleDateFormat("MMM dd", Locale.getDefault()) }
     val scheduledTimeStr = remember(med.scheduledTime) { timeFormatter.format(Date(med.scheduledTime)) }
     val endDateStr = remember(med.endDate) { dateFormatter.format(Date(med.endDate)) }
+
+    var showMenu by remember { mutableStateOf(false) }
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -1185,20 +1083,34 @@ fun MedicationItem(med: Medication, onTaken: () -> Unit) {
                     Icon(
                         Icons.Default.LocalPharmacy,
                         contentDescription = null,
-                        tint = if (med.isTaken) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         med.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        textDecoration = if (med.isTaken) TextDecoration.LineThrough else null,
-                        color = if (med.isTaken) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+                    if (med.isTaken) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = "✓ Taken",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
                 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 
                 Text(
                     "${med.dosage} • ${med.quantity} tab(s) • ${med.frequency}",
@@ -1206,20 +1118,21 @@ fun MedicationItem(med: Medication, onTaken: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.Schedule,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.outline
+                        tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        "Next: $scheduledTimeStr",
+                        "Next Alarm: $scheduledTimeStr",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
                     )
                     Spacer(Modifier.width(12.dp))
                     Icon(
@@ -1237,6 +1150,7 @@ fun MedicationItem(med: Medication, onTaken: () -> Unit) {
                 }
             }
             
+            // Mark Taken Button
             IconButton(
                 onClick = onTaken,
                 enabled = !med.isTaken,
@@ -1249,12 +1163,44 @@ fun MedicationItem(med: Medication, onTaken: () -> Unit) {
                     .size(40.dp)
             ) {
                 Icon(
-                    if (med.isTaken) Icons.Default.Check else Icons.Default.Add,
+                    Icons.Default.Check,
                     contentDescription = "Mark Taken",
                     tint = if (med.isTaken) MaterialTheme.colorScheme.outline 
                            else MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(20.dp)
                 )
+            }
+
+            // 3-Dots Menu Button
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Options",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Edit Medication") },
+                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                        onClick = {
+                            showMenu = false
+                            onEdit()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Delete Medication", color = MaterialTheme.colorScheme.error) },
+                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                        onClick = {
+                            showMenu = false
+                            onDelete()
+                        }
+                    )
+                }
             }
         }
     }

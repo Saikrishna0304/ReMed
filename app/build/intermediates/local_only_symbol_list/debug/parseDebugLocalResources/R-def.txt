@@ -21,3 +21,4 @@ style Theme.ReMed
 style Theme.ReMed.Starting
 xml backup_rules
 xml data_extraction_rules
+xml remed_widget_info

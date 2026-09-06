@@ -54,9 +54,14 @@ class AuthRepository {
 
     suspend fun createFamily(family: Family) {
         firestore.collection("families").document(family.id).set(family).await()
-        // Update user's familyId
+        // Update user's familyId and role
         currentUser?.uid?.let { uid ->
-            firestore.collection("users").document(uid).update("familyId", family.id).await()
+            firestore.collection("users").document(uid).update(
+                mapOf(
+                    "familyId" to family.id,
+                    "role" to "parent"
+                )
+            ).await()
         }
     }
 
@@ -71,12 +76,48 @@ class AuthRepository {
 
         if (family != null) {
             val uid = currentUser?.uid ?: return
-            val updatedMembers = family.memberIds.toMutableList().apply { add(uid) }
+            val updatedMembers = family.memberIds.toMutableList().apply { 
+                if (!contains(uid)) add(uid) 
+            }
             firestore.collection("families").document(family.id).update("memberIds", updatedMembers).await()
             firestore.collection("users").document(uid).update("familyId", family.id).await()
         }
     }
-    
+
+    suspend fun promoteToParent(memberUid: String, familyId: String): Boolean {
+        return try {
+            firestore.collection("users").document(memberUid).update("role", "parent").await()
+            val familyDoc = firestore.collection("families").document(familyId).get().await()
+            val family = familyDoc.toObject(Family::class.java)
+            if (family != null) {
+                val updatedParents = family.parentIds.toMutableList().apply {
+                    if (!contains(memberUid)) add(memberUid)
+                }
+                firestore.collection("families").document(familyId).update("parentIds", updatedParents).await()
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    suspend fun demoteToMember(memberUid: String, familyId: String): Boolean {
+        return try {
+            firestore.collection("users").document(memberUid).update("role", "member").await()
+            val familyDoc = firestore.collection("families").document(familyId).get().await()
+            val family = familyDoc.toObject(Family::class.java)
+            if (family != null) {
+                val updatedParents = family.parentIds.toMutableList().apply {
+                    remove(memberUid)
+                }
+                firestore.collection("families").document(familyId).update("parentIds", updatedParents).await()
+            }
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     fun signOut() {
         auth.signOut()
     }

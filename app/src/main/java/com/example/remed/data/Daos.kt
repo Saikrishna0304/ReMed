@@ -14,6 +14,9 @@ interface MedicationDao {
     @Query("SELECT * FROM medications WHERE userId = :userId ORDER BY scheduledTime ASC")
     fun getAllMedications(userId: String): Flow<List<Medication>>
 
+    @Query("SELECT * FROM medications WHERE userId = :userId ORDER BY scheduledTime ASC")
+    suspend fun getMedicationsList(userId: String): List<Medication>
+
     @Query("SELECT * FROM medications WHERE id = :id")
     suspend fun getMedicationById(id: Int): Medication?
 

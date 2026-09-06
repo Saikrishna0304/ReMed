@@ -32,17 +32,17 @@ class WaterViewModel(
 
     val waterLog: StateFlow<WaterLog?> = userIdFlow
         .flatMapLatest { uid ->
-            if (uid != null) repository.getWaterLog(uid, today)
-            else flowOf(null)
+            val activeUid = if (!uid.isNullOrBlank()) uid else "GUEST_USER"
+            repository.getWaterLog(activeUid, today)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val waterSettings: StateFlow<WaterSettings> = userIdFlow
         .flatMapLatest { uid ->
-            if (uid != null) repository.getWaterSettings(uid).map { it ?: WaterSettings(userId = uid) }
-            else flowOf(WaterSettings(userId = ""))
+            val activeUid = if (!uid.isNullOrBlank()) uid else "GUEST_USER"
+            repository.getWaterSettings(activeUid).map { it ?: WaterSettings(userId = activeUid) }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WaterSettings(userId = ""))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WaterSettings(userId = "GUEST_USER"))
 
     fun addWater(amount: Int) = viewModelScope.launch {
         val uid = userIdFlow.value

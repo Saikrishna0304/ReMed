@@ -48,24 +48,24 @@ class StepViewModel(
 
     val stepLog: StateFlow<StepLog?> = userIdFlow
         .flatMapLatest { uid ->
-            if (uid != null) repository.getStepLog(uid, today)
-            else flowOf(null)
+            val activeUid = if (!uid.isNullOrBlank()) uid else "GUEST_USER"
+            repository.getStepLog(activeUid, today)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val recentLogs: StateFlow<List<StepLog>> = userIdFlow
         .flatMapLatest { uid ->
-            if (uid != null) repository.getRecentStepLogs(uid)
-            else flowOf(emptyList())
+            val activeUid = if (!uid.isNullOrBlank()) uid else "GUEST_USER"
+            repository.getRecentStepLogs(activeUid)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val stepSettings: StateFlow<StepSettings> = userIdFlow
         .flatMapLatest { uid ->
-            if (uid != null) repository.getStepSettings(uid).map { it ?: StepSettings(userId = uid) }
-            else flowOf(StepSettings(userId = ""))
+            val activeUid = if (!uid.isNullOrBlank()) uid else "GUEST_USER"
+            repository.getStepSettings(activeUid).map { it ?: StepSettings(userId = activeUid) }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StepSettings(userId = ""))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StepSettings(userId = "GUEST_USER"))
 
     init {
         registerBestAvailableSensor()

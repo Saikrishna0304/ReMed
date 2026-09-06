@@ -269,6 +269,47 @@ public final class WaterDao_Impl implements WaterDao {
     });
   }
 
+  @Override
+  public Object getSettingsSync(final String userId,
+      final Continuation<? super WaterSettings> $completion) {
+    final String _sql = "SELECT * FROM water_settings WHERE userId = ?";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, userId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<WaterSettings>() {
+      @Override
+      @Nullable
+      public WaterSettings call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfUserId = CursorUtil.getColumnIndexOrThrow(_cursor, "userId");
+          final int _cursorIndexOfDailyGoal = CursorUtil.getColumnIndexOrThrow(_cursor, "dailyGoal");
+          final int _cursorIndexOfQuickAddAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "quickAddAmount");
+          final int _cursorIndexOfReminderInterval = CursorUtil.getColumnIndexOrThrow(_cursor, "reminderInterval");
+          final WaterSettings _result;
+          if (_cursor.moveToFirst()) {
+            final String _tmpUserId;
+            _tmpUserId = _cursor.getString(_cursorIndexOfUserId);
+            final int _tmpDailyGoal;
+            _tmpDailyGoal = _cursor.getInt(_cursorIndexOfDailyGoal);
+            final int _tmpQuickAddAmount;
+            _tmpQuickAddAmount = _cursor.getInt(_cursorIndexOfQuickAddAmount);
+            final long _tmpReminderInterval;
+            _tmpReminderInterval = _cursor.getLong(_cursorIndexOfReminderInterval);
+            _result = new WaterSettings(_tmpUserId,_tmpDailyGoal,_tmpQuickAddAmount,_tmpReminderInterval);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
   @NonNull
   public static List<Class<?>> getRequiredConverters() {
     return Collections.emptyList();

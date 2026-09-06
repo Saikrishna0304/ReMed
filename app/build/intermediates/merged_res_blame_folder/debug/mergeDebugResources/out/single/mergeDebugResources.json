@@ -1,30 +1,34 @@
 [
     {
-        "merged": "com.example.remed.app-debug-77:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "com.example.remed.app-main-79:/mipmap-anydpi-v26/ic_launcher_round.xml"
+        "merged": "com.example.remed.app-debug-83:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.example.remed.app-main-85:/drawable/ic_launcher_background.xml"
     },
     {
-        "merged": "com.example.remed.app-debug-77:/drawable_ic_launcher_background.xml.flat",
-        "source": "com.example.remed.app-main-79:/drawable/ic_launcher_background.xml"
+        "merged": "com.example.remed.app-debug-83:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.example.remed.app-main-85:/mipmap-anydpi-v26/ic_launcher_round.xml"
     },
     {
-        "merged": "com.example.remed.app-debug-77:/drawable_ic_water_drop.xml.flat",
-        "source": "com.example.remed.app-main-79:/drawable/ic_water_drop.xml"
+        "merged": "com.example.remed.app-debug-83:/drawable_remed_logo.png.flat",
+        "source": "com.example.remed.app-main-85:/drawable/remed_logo.png"
     },
     {
-        "merged": "com.example.remed.app-debug-77:/mipmap-anydpi-v26_ic_launcher.xml.flat",
-        "source": "com.example.remed.app-main-79:/mipmap-anydpi-v26/ic_launcher.xml"
+        "merged": "com.example.remed.app-debug-83:/drawable_ic_water_drop.xml.flat",
+        "source": "com.example.remed.app-main-85:/drawable/ic_water_drop.xml"
     },
     {
-        "merged": "com.example.remed.app-debug-77:/xml_backup_rules.xml.flat",
-        "source": "com.example.remed.app-main-79:/xml/backup_rules.xml"
+        "merged": "com.example.remed.app-debug-83:/xml_remed_widget_info.xml.flat",
+        "source": "com.example.remed.app-main-85:/xml/remed_widget_info.xml"
     },
     {
-        "merged": "com.example.remed.app-debug-77:/drawable_remed_logo.png.flat",
-        "source": "com.example.remed.app-main-79:/drawable/remed_logo.png"
+        "merged": "com.example.remed.app-debug-83:/xml_backup_rules.xml.flat",
+        "source": "com.example.remed.app-main-85:/xml/backup_rules.xml"
     },
     {
-        "merged": "com.example.remed.app-debug-77:/xml_data_extraction_rules.xml.flat",
-        "source": "com.example.remed.app-main-79:/xml/data_extraction_rules.xml"
+        "merged": "com.example.remed.app-debug-83:/xml_data_extraction_rules.xml.flat",
+        "source": "com.example.remed.app-main-85:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.example.remed.app-debug-83:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.example.remed.app-main-85:/mipmap-anydpi-v26/ic_launcher.xml"
     }
 ]

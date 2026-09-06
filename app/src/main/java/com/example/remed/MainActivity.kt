@@ -159,18 +159,24 @@ class MainActivity : ComponentActivity() {
                 ) {
                     var showIntroSplash by remember { mutableStateOf(true) }
 
-                    if (showIntroSplash) {
+                    val authViewModel: AuthViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            @Suppress("UNCHECKED_CAST")
+                            return AuthViewModel(authRepository, app) as T
+                        }
+                    })
+
+                    val isAuthLoading by authViewModel.isAuthLoading.collectAsState()
+                    val currentUser by authViewModel.currentUser.collectAsState()
+                    val userProfile by authViewModel.userProfile.collectAsState()
+                    val family by authViewModel.family.collectAsState()
+                    val isGuestMode by authViewModel.isGuestMode.collectAsState()
+
+                    if (showIntroSplash || isAuthLoading) {
                         IntroSplashScreen(
                             onAnimationComplete = { showIntroSplash = false }
                         )
                     } else {
-                        val authViewModel: AuthViewModel = viewModel(factory = object : ViewModelProvider.Factory {
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                                @Suppress("UNCHECKED_CAST")
-                                return AuthViewModel(authRepository) as T
-                            }
-                        })
-
                         val factory = object : ViewModelProvider.Factory {
                             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                                 val viewModel = when {
@@ -197,11 +203,6 @@ class MainActivity : ComponentActivity() {
                                 return viewModel as T
                             }
                         }
-
-                        val currentUser by authViewModel.currentUser.collectAsState()
-                        val userProfile by authViewModel.userProfile.collectAsState()
-                        val family by authViewModel.family.collectAsState()
-                        val isGuestMode by authViewModel.isGuestMode.collectAsState()
 
                         if (currentUser == null && !isGuestMode) {
                             LoginScreen(authViewModel = authViewModel, onLoginSuccess = { /* Managed by collectAsState */ })

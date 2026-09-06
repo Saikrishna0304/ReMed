@@ -30,6 +30,9 @@ interface StepDao {
     @Query("SELECT * FROM step_settings WHERE userId = :userId")
     fun getSettings(userId: String): Flow<StepSettings?>
 
+    @Query("SELECT * FROM step_settings WHERE userId = :userId")
+    suspend fun getSettingsSync(userId: String): StepSettings?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSettings(settings: StepSettings)
 }

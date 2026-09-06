@@ -33,13 +33,26 @@ class MedicationViewModel(
 
     val allMedications: StateFlow<List<Medication>> = userIdFlow
         .flatMapLatest { uid ->
-            if (uid != null) repository.getAllMedications(uid)
-            else flowOf(emptyList())
+            val activeUid = if (!uid.isNullOrBlank()) uid else "GUEST_USER"
+            repository.getAllMedications(activeUid)
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _scannedMedication = MutableStateFlow<Medication?>(null)
     val scannedMedication: StateFlow<Medication?> = _scannedMedication.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            userIdFlow.collect { uid ->
+                if (uid != null && uid != "GUEST_USER" && uid.isNotBlank()) {
+                    val restoredMeds = repository.syncPrescriptionsFromFirebase(uid)
+                    restoredMeds.forEach { med ->
+                        alarmScheduler.scheduleMedicationReminder(med)
+                    }
+                }
+            }
+        }
+    }
 
     fun insert(medication: Medication) = viewModelScope.launch {
         val uid = userIdFlow.value
@@ -52,6 +65,16 @@ class MedicationViewModel(
 
     fun markAsTaken(medication: Medication) = viewModelScope.launch {
         repository.updateMedication(medication.copy(isTaken = true, lastTakenTimestamp = System.currentTimeMillis()))
+    }
+
+    fun update(medication: Medication) = viewModelScope.launch {
+        repository.updateMedication(medication)
+        alarmScheduler.scheduleMedicationReminder(medication)
+    }
+
+    fun delete(medication: Medication) = viewModelScope.launch {
+        repository.deleteMedication(medication)
+        alarmScheduler.cancelMedicationReminder(medication.id)
     }
 
     suspend fun onImageScanned(bitmap: Bitmap): Boolean {

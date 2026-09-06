@@ -25,6 +25,9 @@ interface WaterDao {
     @Query("SELECT * FROM water_settings WHERE userId = :userId")
     fun getSettings(userId: String): Flow<WaterSettings?>
 
+    @Query("SELECT * FROM water_settings WHERE userId = :userId")
+    suspend fun getSettingsSync(userId: String): WaterSettings?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSettings(settings: WaterSettings)
 }

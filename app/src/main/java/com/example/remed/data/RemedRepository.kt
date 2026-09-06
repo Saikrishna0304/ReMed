@@ -19,21 +19,130 @@ class ReMedRepository(
         waterDao.getLogForDate(userId, date)
 
     suspend fun insertMedication(medication: Medication): Long {
-        return medicationDao.insertMedication(medication)
+        val insertedId = medicationDao.insertMedication(medication)
+        val finalMed = medication.copy(id = insertedId.toInt())
+
+        // Backup to Firebase Firestore under "prescriptions" sub-collection
+        if (finalMed.userId != "GUEST_USER" && finalMed.userId.isNotBlank()) {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(finalMed.userId)
+                    .collection("prescriptions")
+                    .document(insertedId.toString())
+                    .set(finalMed)
+                    .await()
+            } catch (_: Exception) {
+                // Offline fallback
+            }
+        }
+        return insertedId
     }
 
     suspend fun updateMedication(medication: Medication) {
         medicationDao.updateMedication(medication)
+
+        // Sync update to Firebase Firestore
+        if (medication.userId != "GUEST_USER" && medication.userId.isNotBlank()) {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(medication.userId)
+                    .collection("prescriptions")
+                    .document(medication.id.toString())
+                    .set(medication)
+                    .await()
+            } catch (_: Exception) {
+                // Offline fallback
+            }
+        }
+    }
+
+    suspend fun deleteMedication(medication: Medication) {
+        medicationDao.deleteMedication(medication)
+
+        // Sync deletion to Firebase Firestore
+        if (medication.userId != "GUEST_USER" && medication.userId.isNotBlank()) {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(medication.userId)
+                    .collection("prescriptions")
+                    .document(medication.id.toString())
+                    .delete()
+                    .await()
+            } catch (_: Exception) {
+                // Offline fallback
+            }
+        }
+    }
+
+    suspend fun syncPrescriptionsFromFirebase(userId: String): List<Medication> {
+        if (userId == "GUEST_USER" || userId.isBlank()) return emptyList()
+        return try {
+            val firestore = FirebaseFirestore.getInstance()
+            val snapshot = firestore
+                .collection("users")
+                .document(userId)
+                .collection("prescriptions")
+                .get()
+                .await()
+
+            val remoteMeds = snapshot.documents.mapNotNull { doc ->
+                doc.toObject(Medication::class.java)
+            }
+
+            // 1. Restore remote medications into local Room DB
+            remoteMeds.forEach { med ->
+                medicationDao.insertMedication(med)
+            }
+
+            // 2. Upload any local Room DB medications for this user that are not in Firestore yet
+            val localMeds = medicationDao.getMedicationsList(userId)
+            val remoteIds = remoteMeds.map { it.id }.toSet()
+            localMeds.filter { it.id !in remoteIds }.forEach { localMed ->
+                try {
+                    firestore.collection("users")
+                        .document(userId)
+                        .collection("prescriptions")
+                        .document(localMed.id.toString())
+                        .set(localMed)
+                        .await()
+                } catch (_: Exception) {}
+            }
+
+            medicationDao.getMedicationsList(userId)
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     suspend fun updateWaterIntake(userId: String, date: String, amount: Int) {
         val log = waterDao.getLog(userId, date)
-        if (log != null) {
-            val newAmount = log.amount + amount
-            waterDao.updateLog(log.copy(amount = if (newAmount < 0) 0 else newAmount))
+        val newAmount = if (log != null) {
+            val a = log.amount + amount
+            if (a < 0) 0 else a
         } else {
-            if (amount > 0) {
-                waterDao.insertLog(WaterLog(userId = userId, date = date, amount = amount))
+            if (amount > 0) amount else 0
+        }
+        val updatedLog = WaterLog(userId = userId, date = date, amount = newAmount)
+
+        if (log != null) {
+            waterDao.updateLog(updatedLog)
+        } else if (newAmount > 0) {
+            waterDao.insertLog(updatedLog)
+        }
+
+        if (userId != "GUEST_USER" && userId.isNotBlank()) {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(userId)
+                    .collection("water_logs")
+                    .document(date)
+                    .set(updatedLog)
+                    .await()
+            } catch (_: Exception) {
             }
         }
     }
@@ -42,6 +151,19 @@ class ReMedRepository(
 
     suspend fun updateWaterSettings(settings: WaterSettings) {
         waterDao.insertSettings(settings)
+
+        if (settings.userId != "GUEST_USER" && settings.userId.isNotBlank()) {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(settings.userId)
+                    .collection("water_settings")
+                    .document("settings")
+                    .set(settings)
+                    .await()
+            } catch (_: Exception) {
+            }
+        }
     }
 
     // Steps
@@ -112,5 +234,18 @@ class ReMedRepository(
 
     suspend fun updateStepSettings(settings: StepSettings) {
         stepDao.insertSettings(settings)
+
+        if (settings.userId != "GUEST_USER" && settings.userId.isNotBlank()) {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(settings.userId)
+                    .collection("step_settings")
+                    .document("settings")
+                    .set(settings)
+                    .await()
+            } catch (_: Exception) {
+            }
+        }
     }
 }

@@ -37,16 +37,26 @@ object MedicationParser {
             dosage = lines.find { it.matches(dosageRegex) } ?: if (lines.size > 1) lines[1] else null
         }
 
+        val lowerText = text.lowercase()
         if (frequency == null) {
-            // Find a line that looks like a frequency
-            val freqRegex = Regex(".*(daily|times|day|morning|night|evening|hour|every).*", RegexOption.IGNORE_CASE)
-            frequency = lines.find { it.matches(freqRegex) } ?: if (lines.size > 2) lines[2] else null
+            frequency = when {
+                lowerText.contains("twice") || lowerText.contains("2 times") || lowerText.contains("2x") || lowerText.contains("bid") || lowerText.contains("bd") ->
+                    "Twice Daily (Morning & Evening)"
+                lowerText.contains("thrice") || lowerText.contains("three times") || lowerText.contains("3 times") || lowerText.contains("3x") || lowerText.contains("tid") ->
+                    "Three Times Daily"
+                lowerText.contains("once") || lowerText.contains("1 time") || lowerText.contains("daily") || lowerText.contains("qd") ->
+                    "Once Daily"
+                else -> {
+                    val freqRegex = Regex(".*(daily|times|day|morning|night|evening|hour|every).*", RegexOption.IGNORE_CASE)
+                    lines.find { it.matches(freqRegex) } ?: "Daily"
+                }
+            }
         }
 
         return Medication(
             name = finalName,
             dosage = dosage ?: "As prescribed",
-            frequency = frequency ?: "Daily",
+            frequency = frequency,
             scheduledTime = System.currentTimeMillis()
         )
     }
