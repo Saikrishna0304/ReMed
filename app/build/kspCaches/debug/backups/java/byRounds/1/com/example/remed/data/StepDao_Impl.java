@@ -9,6 +9,7 @@ import androidx.room.EntityDeletionOrUpdateAdapter;
 import androidx.room.EntityInsertionAdapter;
 import androidx.room.RoomDatabase;
 import androidx.room.RoomSQLiteQuery;
+import androidx.room.SharedSQLiteStatement;
 import androidx.room.util.CursorUtil;
 import androidx.room.util.DBUtil;
 import androidx.sqlite.db.SupportSQLiteStatement;
@@ -37,6 +38,8 @@ public final class StepDao_Impl implements StepDao {
   private final EntityInsertionAdapter<StepSettings> __insertionAdapterOfStepSettings;
 
   private final EntityDeletionOrUpdateAdapter<StepLog> __updateAdapterOfStepLog;
+
+  private final SharedSQLiteStatement __preparedStmtOfDeleteLogsOlderThan;
 
   public StepDao_Impl(@NonNull final RoomDatabase __db) {
     this.__db = __db;
@@ -84,6 +87,14 @@ public final class StepDao_Impl implements StepDao {
         statement.bindLong(3, entity.getCount());
         statement.bindString(4, entity.getUserId());
         statement.bindString(5, entity.getDate());
+      }
+    };
+    this.__preparedStmtOfDeleteLogsOlderThan = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM step_logs WHERE userId = ? AND date < ?";
+        return _query;
       }
     };
   }
@@ -138,6 +149,34 @@ public final class StepDao_Impl implements StepDao {
           return Unit.INSTANCE;
         } finally {
           __db.endTransaction();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object deleteLogsOlderThan(final String userId, final String cutoffDate,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfDeleteLogsOlderThan.acquire();
+        int _argIndex = 1;
+        _stmt.bindString(_argIndex, userId);
+        _argIndex = 2;
+        _stmt.bindString(_argIndex, cutoffDate);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfDeleteLogsOlderThan.release(_stmt);
         }
       }
     }, $completion);

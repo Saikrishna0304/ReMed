@@ -24,6 +24,9 @@ interface StepDao {
     @Update
     suspend fun updateLog(log: StepLog)
 
+    @Query("DELETE FROM step_logs WHERE userId = :userId AND date < :cutoffDate")
+    suspend fun deleteLogsOlderThan(userId: String, cutoffDate: String)
+
     @Query("SELECT * FROM step_settings WHERE userId = :userId")
     fun getSettings(userId: String): Flow<StepSettings?>
 

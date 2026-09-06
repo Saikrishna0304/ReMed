@@ -1,6 +1,11 @@
 package com.example.remed.data
 
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class ReMedRepository(
     private val medicationDao: MedicationDao,
@@ -46,10 +51,60 @@ class ReMedRepository(
 
     suspend fun updateStepCount(userId: String, date: String, steps: Int) {
         val log = stepDao.getLog(userId, date)
+        val updatedCount = (log?.count ?: 0) + steps
+        val updatedLog = StepLog(userId = userId, date = date, count = updatedCount)
+
+        // 1. Save to local Room database
         if (log != null) {
-            stepDao.updateLog(log.copy(count = log.count + steps))
+            stepDao.updateLog(updatedLog)
         } else {
-            stepDao.insertLog(StepLog(userId, date, steps))
+            stepDao.insertLog(updatedLog)
+        }
+
+        // 2. Perform 30-day retention cleanup (Room & Firestore)
+        cleanupOldStepLogs(userId)
+
+        // 3. Sync to Firestore if user is logged in
+        if (userId != "GUEST_USER" && userId.isNotBlank()) {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(userId)
+                    .collection("step_logs")
+                    .document(date)
+                    .set(updatedLog)
+                    .await()
+            } catch (_: Exception) {
+                // Ignore network exceptions during offline sync
+            }
+        }
+    }
+
+    private suspend fun cleanupOldStepLogs(userId: String) {
+        try {
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.DAY_OF_YEAR, -30)
+            val cutoffDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
+
+            // Delete local logs older than 30 days
+            stepDao.deleteLogsOlderThan(userId, cutoffDate)
+
+            // Delete remote Firestore logs older than 30 days
+            if (userId != "GUEST_USER" && userId.isNotBlank()) {
+                val oldDocs = FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(userId)
+                    .collection("step_logs")
+                    .whereLessThan("date", cutoffDate)
+                    .get()
+                    .await()
+
+                for (doc in oldDocs.documents) {
+                    doc.reference.delete().await()
+                }
+            }
+        } catch (_: Exception) {
+            // Ignore cleanup errors
         }
     }
 

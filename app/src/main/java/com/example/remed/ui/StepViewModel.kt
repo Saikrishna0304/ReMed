@@ -38,13 +38,13 @@ class StepViewModel(
     private var initialHardwareStepCount = -1f
     private var lastStepTimeMs = 0L
 
-    // Accelerometer Adaptive Peak Detection Variables
+    // Accelerometer Fallback Peak Detection Variables
     private var filteredGravity = 9.81f
     private var isPeakHigh = false
     private val alpha = 0.8f
-    private val minStepIntervalMs = 250L // max ~240 steps/min
-    private val peakThreshold = 1.8f      // linear acceleration peak threshold (m/s^2)
-    private val resetThreshold = 0.5f     // re-arm threshold (m/s^2)
+    private val minStepIntervalMs = 250L
+    private val peakThreshold = 1.8f
+    private val resetThreshold = 0.5f
 
     val stepLog: StateFlow<StepLog?> = userIdFlow
         .flatMapLatest { uid ->
@@ -72,20 +72,20 @@ class StepViewModel(
     }
 
     private fun registerBestAvailableSensor() {
-        val stepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
         val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        val stepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
         val accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
         when {
-            // Priority 1: Hardware Step Detector (Triggers per step)
-            stepDetector != null -> {
-                sensorManager.registerListener(this, stepDetector, SensorManager.SENSOR_DELAY_UI)
-            }
-            // Priority 2: Hardware Step Counter (Cumulative counter)
+            // Priority 1: Hardware Step Counter (Most accurate on Android phones)
             stepCounter != null -> {
                 sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_UI)
             }
-            // Priority 3: Software Accelerometer Peak Detection Fallback
+            // Priority 2: Hardware Step Detector
+            stepDetector != null -> {
+                sensorManager.registerListener(this, stepDetector, SensorManager.SENSOR_DELAY_UI)
+            }
+            // Priority 3: Accelerometer Fallback
             accelSensor != null -> {
                 sensorManager.registerListener(this, accelSensor, SensorManager.SENSOR_DELAY_GAME)
             }
@@ -97,15 +97,6 @@ class StepViewModel(
         val now = System.currentTimeMillis()
 
         when (sensorType) {
-            Sensor.TYPE_STEP_DETECTOR -> {
-                if (event.values[0] == 1.0f) {
-                    if ((now - lastStepTimeMs) >= minStepIntervalMs) {
-                        lastStepTimeMs = now
-                        addSteps(1)
-                    }
-                }
-            }
-
             Sensor.TYPE_STEP_COUNTER -> {
                 val totalStepsSinceBoot = event.values[0]
                 if (initialHardwareStepCount < 0f) {
@@ -114,11 +105,14 @@ class StepViewModel(
                     val delta = (totalStepsSinceBoot - initialHardwareStepCount).toInt()
                     if (delta > 0) {
                         initialHardwareStepCount = totalStepsSinceBoot
-                        if ((now - lastStepTimeMs) >= minStepIntervalMs) {
-                            lastStepTimeMs = now
-                            addSteps(delta)
-                        }
+                        addSteps(delta)
                     }
+                }
+            }
+
+            Sensor.TYPE_STEP_DETECTOR -> {
+                if (event.values[0] == 1.0f) {
+                    addSteps(1)
                 }
             }
 
@@ -129,7 +123,6 @@ class StepViewModel(
 
                 val totalAccel = sqrt((x * x + y * y + z * z).toDouble()).toFloat()
 
-                // Exponential moving average filter to estimate gravity
                 filteredGravity = alpha * filteredGravity + (1f - alpha) * totalAccel
                 val linearAccel = totalAccel - filteredGravity
 
