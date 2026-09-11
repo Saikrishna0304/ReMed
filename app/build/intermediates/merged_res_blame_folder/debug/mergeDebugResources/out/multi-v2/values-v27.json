@@ -4,7 +4,7 @@
             "outputFile": "com.example.remed.app-mergeDebugResources-81:/values-v27/values-v27.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\8eaaaf90a200dabf7c7715c8d093ef75\\workspace\\transformed\\jetified-core-splashscreen-1.0.1\\res\\values-v27\\values-v27.xml",
+                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\f051dcce50800d86256c2ebb451dbe54\\workspace\\transformed\\jetified-core-splashscreen-1.0.1\\res\\values-v27\\values-v27.xml",
                     "from": {
                         "startLines": "2,3,4,7",
                         "startColumns": "4,4,4,4",

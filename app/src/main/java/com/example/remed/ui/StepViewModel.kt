@@ -15,7 +15,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -68,28 +67,31 @@ class StepViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StepSettings(userId = "GUEST_USER"))
 
     init {
-        registerBestAvailableSensor()
+        startListening()
     }
 
-    private fun registerBestAvailableSensor() {
-        val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-        val stepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
-        val accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    fun startListening() {
+        try {
+            sensorManager.unregisterListener(this)
+            val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+            val stepDetector = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
+            val accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-        when {
-            // Priority 1: Hardware Step Counter (Most accurate on Android phones)
-            stepCounter != null -> {
-                sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_UI)
+            when {
+                // Priority 1: Hardware Step Counter (Most accurate on Android phones)
+                stepCounter != null -> {
+                    sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_UI)
+                }
+                // Priority 2: Hardware Step Detector
+                stepDetector != null -> {
+                    sensorManager.registerListener(this, stepDetector, SensorManager.SENSOR_DELAY_UI)
+                }
+                // Priority 3: Accelerometer Fallback
+                accelSensor != null -> {
+                    sensorManager.registerListener(this, accelSensor, SensorManager.SENSOR_DELAY_GAME)
+                }
             }
-            // Priority 2: Hardware Step Detector
-            stepDetector != null -> {
-                sensorManager.registerListener(this, stepDetector, SensorManager.SENSOR_DELAY_UI)
-            }
-            // Priority 3: Accelerometer Fallback
-            accelSensor != null -> {
-                sensorManager.registerListener(this, accelSensor, SensorManager.SENSOR_DELAY_GAME)
-            }
-        }
+        } catch (_: Exception) {}
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -99,7 +101,7 @@ class StepViewModel(
         when (sensorType) {
             Sensor.TYPE_STEP_COUNTER -> {
                 val totalStepsSinceBoot = event.values[0]
-                if (initialHardwareStepCount < 0f) {
+                if (initialHardwareStepCount < 0f || totalStepsSinceBoot < initialHardwareStepCount) {
                     initialHardwareStepCount = totalStepsSinceBoot
                 } else {
                     val delta = (totalStepsSinceBoot - initialHardwareStepCount).toInt()
@@ -143,8 +145,15 @@ class StepViewModel(
 
     fun addSteps(steps: Int) = viewModelScope.launch {
         val uid = userIdFlow.value
-        if (uid != null && steps > 0) {
+        if (uid != null && steps != 0) {
             repository.updateStepCount(uid, today, steps)
+        }
+    }
+
+    fun setSteps(newCount: Int) = viewModelScope.launch {
+        val uid = userIdFlow.value
+        if (uid != null && newCount >= 0) {
+            repository.setStepCount(uid, today, newCount)
         }
     }
 
@@ -157,6 +166,8 @@ class StepViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        sensorManager.unregisterListener(this)
+        try {
+            sensorManager.unregisterListener(this)
+        } catch (_: Exception) {}
     }
 }

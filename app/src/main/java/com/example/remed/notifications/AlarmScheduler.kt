@@ -70,11 +70,12 @@ class AlarmScheduler(private val context: Context) {
         alarmManager.cancel(pendingIntent)
     }
 
-    fun scheduleFollowUp(medicationId: Int, medName: String) {
+    fun scheduleFollowUp(medicationId: Int, medName: String, delayMillis: Long = 5 * 60 * 1000, resendCount: Int = 0) {
         val intent = Intent(context, MedicationReminderReceiver::class.java).apply {
             putExtra("med_id", medicationId)
             putExtra("med_name", medName)
             putExtra("is_follow_up", true)
+            putExtra("resend_count", resendCount)
         }
         val pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -83,37 +84,47 @@ class AlarmScheduler(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Schedule for 5 minutes later
-        val fiveMinutesLater = System.currentTimeMillis() + (5 * 60 * 1000)
+        val triggerTime = System.currentTimeMillis() + delayMillis
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (alarmManager.canScheduleExactAlarms()) {
                     alarmManager.setExactAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
-                        fiveMinutesLater,
+                        triggerTime,
                         pendingIntent
                     )
                 } else {
                     alarmManager.setAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
-                        fiveMinutesLater,
+                        triggerTime,
                         pendingIntent
                     )
                 }
             } else {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
-                    fiveMinutesLater,
+                    triggerTime,
                     pendingIntent
                 )
             }
         } catch (_: SecurityException) {
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
-                fiveMinutesLater,
+                triggerTime,
                 pendingIntent
             )
         }
+    }
+
+    fun cancelFollowUp(medicationId: Int) {
+        val intent = Intent(context, MedicationReminderReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            medicationId + 100000,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.cancel(pendingIntent)
     }
 
     fun scheduleRepeating(intervalInMinutes: Long) {
