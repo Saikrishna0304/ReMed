@@ -174,7 +174,7 @@ class ReMedRepository(
     suspend fun updateStepCount(userId: String, date: String, steps: Int) {
         val log = stepDao.getLog(userId, date)
         val updatedCount = (log?.count ?: 0) + steps
-        val updatedLog = StepLog(userId = userId, date = date, count = updatedCount)
+        val updatedLog = StepLog(userId = userId, date = date, count = if (updatedCount < 0) 0 else updatedCount)
 
         // 1. Save to local Room database
         if (log != null) {
@@ -199,6 +199,24 @@ class ReMedRepository(
             } catch (_: Exception) {
                 // Ignore network exceptions during offline sync
             }
+        }
+    }
+
+    suspend fun setStepCount(userId: String, date: String, count: Int) {
+        val updatedLog = StepLog(userId = userId, date = date, count = if (count < 0) 0 else count)
+        stepDao.insertLog(updatedLog)
+        cleanupOldStepLogs(userId)
+
+        if (userId != "GUEST_USER" && userId.isNotBlank()) {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(userId)
+                    .collection("step_logs")
+                    .document(date)
+                    .set(updatedLog)
+                    .await()
+            } catch (_: Exception) {}
         }
     }
 

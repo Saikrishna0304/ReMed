@@ -4,7 +4,18 @@
             "outputFile": "com.example.remed.app-mergeDebugResources-81:/values-v29/values-v29.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\baef7f5b63ceb3a2fe16c9aa99da38ae\\workspace\\transformed\\jetified-glance-appwidget-1.1.1\\res\\values-v29\\values-v29.xml",
+                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\f051dcce50800d86256c2ebb451dbe54\\workspace\\transformed\\jetified-core-splashscreen-1.0.1\\res\\values-v29\\values-v29.xml",
+                    "from": {
+                        "startLines": "2,7",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,374",
+                        "endLines": "6,8",
+                        "endColumns": "12,12",
+                        "endOffsets": "369,464"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\c94dffe55e30a97234d7ffde6799fa05\\workspace\\transformed\\jetified-glance-appwidget-1.1.1\\res\\values-v29\\values-v29.xml",
                     "from": {
                         "startLines": "2,5,19,22,25,26,27",
                         "startColumns": "4,4,4,4,4,4,4",
@@ -20,17 +31,6 @@
                         "endLines": "11,25,28,31,32,33,34",
                         "endColumns": "12,12,12,12,88,65,65",
                         "endOffsets": "653,1457,1648,1839,1928,1994,2060"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\8eaaaf90a200dabf7c7715c8d093ef75\\workspace\\transformed\\jetified-core-splashscreen-1.0.1\\res\\values-v29\\values-v29.xml",
-                    "from": {
-                        "startLines": "2,7",
-                        "startColumns": "4,4",
-                        "startOffsets": "55,374",
-                        "endLines": "6,8",
-                        "endColumns": "12,12",
-                        "endOffsets": "369,464"
                     }
                 }
             ]

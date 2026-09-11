@@ -7,25 +7,34 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -70,6 +79,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -91,6 +101,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -120,7 +133,10 @@ import com.example.remed.data.StepSettings
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.geometry.Offset
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.example.remed.ui.components.MedicationEditScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -362,7 +378,7 @@ fun DashboardScreen(
                             log = stepLog,
                             recentLogs = recentStepLogs,
                             settings = stepSettings,
-                            onAddSteps = { steps -> stepViewModel.addSteps(steps) },
+                            onSetSteps = { count -> stepViewModel.setSteps(count) },
                             onUpdateGoal = { goal: Int -> stepViewModel.updateGoal(goal) }
                         )
                     }
@@ -381,12 +397,43 @@ fun StepCard(
     log: StepLog?,
     recentLogs: List<StepLog>,
     settings: StepSettings,
-    onAddSteps: (Int) -> Unit = {},
+    onSetSteps: (Int) -> Unit = {},
     onUpdateGoal: (Int) -> Unit
 ) {
     var showGoalDialog by remember { mutableStateOf(false) }
+    var showEditStepsDialog by remember { mutableStateOf(false) }
     val progress = ((log?.count ?: 0) / settings.dailyGoal.toFloat()).coerceIn(0f, 1f)
     val primaryColor = MaterialTheme.colorScheme.primary
+
+    if (showEditStepsDialog) {
+        var stepsText by remember { mutableStateOf((log?.count ?: 0).toString()) }
+        AlertDialog(
+            onDismissRequest = { showEditStepsDialog = false },
+            title = { Text("Edit Today's Steps") },
+            text = {
+                TextField(
+                    value = stepsText,
+                    onValueChange = { stepsText = it.filter { c -> c.isDigit() } },
+                    label = { Text("Steps Count") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onSetSteps(stepsText.toIntOrNull() ?: 0)
+                    showEditStepsDialog = false
+                }) {
+                    Text("Update")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditStepsDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     if (showGoalDialog) {
         var goalText by remember { mutableStateOf(settings.dailyGoal.toString()) }
@@ -483,10 +530,13 @@ fun StepCard(
                 }
 
                 // Step Icon in the middle (matching bottom menu bar)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable { showEditStepsDialog = true }
+                ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
-                        contentDescription = null,
+                        contentDescription = "Edit Steps",
                         modifier = Modifier.size(56.dp),
                         tint = primaryColor
                     )
@@ -586,6 +636,75 @@ fun StepCard(
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            val context = LocalContext.current
+            val lifecycleOwner = LocalLifecycleOwner.current
+            var isBatteryOptimized by remember { 
+                val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+                mutableStateOf(!pm.isIgnoringBatteryOptimizations(context.packageName))
+            }
+
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+                        isBatteryOptimized = !pm.isIgnoringBatteryOptimizations(context.packageName)
+                    }
+                }
+                val lifecycle = lifecycleOwner.lifecycle
+                lifecycle.addObserver(observer)
+                onDispose { lifecycle.removeObserver(observer) }
+            }
+
+            AnimatedVisibility(
+                visible = isBatteryOptimized,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
+                    ),
+                    shape = MaterialTheme.shapes.medium,
+                    onClick = {
+                        try {
+                            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                            context.startActivity(intent)
+                        } catch (_: Exception) {
+                            val intent = Intent(Settings.ACTION_SETTINGS)
+                            context.startActivity(intent)
+                        }
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.BatteryAlert,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                "Battery Optimization is ON",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                "Tap here to disable it. This ensures steps are counted accurately while the screen is off.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
                         }
                     }
                 }

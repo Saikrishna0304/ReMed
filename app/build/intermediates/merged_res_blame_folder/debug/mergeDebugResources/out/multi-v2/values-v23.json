@@ -4,17 +4,7 @@
             "outputFile": "com.example.remed.app-mergeDebugResources-81:/values-v23/values-v23.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\76820951c7909ffed736d2fd4473677b\\workspace\\transformed\\work-runtime-2.9.0\\res\\values-v23\\values-v23.xml",
-                    "from": {
-                        "startLines": "2,3",
-                        "startColumns": "4,4",
-                        "startOffsets": "55,121",
-                        "endColumns": "65,62",
-                        "endOffsets": "116,179"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\baef7f5b63ceb3a2fe16c9aa99da38ae\\workspace\\transformed\\jetified-glance-appwidget-1.1.1\\res\\values-v23\\values-v23.xml",
+                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\c94dffe55e30a97234d7ffde6799fa05\\workspace\\transformed\\jetified-glance-appwidget-1.1.1\\res\\values-v23\\values-v23.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",
@@ -31,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\d86a06480bc98ad6cfb2f241808661ea\\workspace\\transformed\\appcompat-1.2.0\\res\\values-v23\\values-v23.xml",
+                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\2d58b6e139924946db98d91abc7e04fd\\workspace\\transformed\\appcompat-1.2.0\\res\\values-v23\\values-v23.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,20,34,35,36,39,43,44,45,46",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -47,6 +37,16 @@
                         "endLines": "5,6,7,8,22,36,37,38,41,45,46,47,48,52",
                         "endColumns": "134,134,74,86,12,12,118,126,12,12,114,106,112,12",
                         "endOffsets": "370,505,580,667,1405,2155,2274,2401,2623,2847,2962,3069,3182,3412"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\3adb2e0dd5471422db803157f5032ac5\\workspace\\transformed\\work-runtime-2.9.0\\res\\values-v23\\values-v23.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,121",
+                        "endColumns": "65,62",
+                        "endOffsets": "116,179"
                     }
                 }
             ]

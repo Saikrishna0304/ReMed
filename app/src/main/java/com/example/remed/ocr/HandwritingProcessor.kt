@@ -4,13 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import com.example.remed.ml.HandwritingRecognitionModel
 import org.tensorflow.lite.DataType
-import org.tensorflow.lite.support.common.ops.NormalizeOp
-import org.tensorflow.lite.support.image.ImageProcessor
-import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.image.ops.ResizeOp
-import org.tensorflow.lite.support.image.ops.TransformToGrayscaleOp
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 class HandwritingProcessor(private val context: Context) {
 
@@ -19,39 +15,42 @@ class HandwritingProcessor(private val context: Context) {
     }
 
     fun processHandwriting(bitmap: Bitmap): String {
-        // 1. Preprocess the image
-        // Most handwriting models expect 28x28 grayscale, inverted (white ink on black background)
-        val imageProcessor = ImageProcessor.Builder()
-            .add(TransformToGrayscaleOp())
-            .add(ResizeOp(28, 28, ResizeOp.ResizeMethod.BILINEAR))
-            // Invert colors while normalizing: Our canvas is black ink (0) on white (255).
-            // (255 - x) / 255 maps white to 0.0 (background) and black to 1.0 (ink).
-            // NormalizeOp(mean, stddev) -> result = (val - mean) / stddev
-            // To get (255 - x) / 255.0:
-            // x' = (x - 255) / -255.0 = (255 - x) / 255.0
-            .add(NormalizeOp(255f, -255f))
-            .build()
+        // 1. Scale bitmap to 28x28 (pure Kotlin, no JNI library needed)
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 28, 28, true)
 
-        var tensorImage = TensorImage(DataType.FLOAT32)
-        tensorImage.load(bitmap)
-        tensorImage = imageProcessor.process(tensorImage)
+        // 2. Prepare float tensor buffer (28x28 grayscale inverted)
+        val byteBuffer = ByteBuffer.allocateDirect(28 * 28 * 4)
+        byteBuffer.order(ByteOrder.nativeOrder())
 
-        // 2. Run inference
-        val outputs = model.process(tensorImage.tensorBuffer)
+        val pixels = IntArray(28 * 28)
+        scaledBitmap.getPixels(pixels, 0, 28, 0, 0, 28, 28)
+
+        for (pixel in pixels) {
+            val r = (pixel shr 16) and 0xFF
+            val g = (pixel shr 8) and 0xFF
+            val b = pixel and 0xFF
+            // Grayscale value 0..255
+            val gray = (0.299f * r + 0.587f * g + 0.114f * b)
+            // Normalize & invert: (255 - gray) / 255.0f
+            val normalized = (255f - gray) / 255f
+            byteBuffer.putFloat(normalized)
+        }
+
+        // 3. Run inference
+        val inputBuffer = TensorBuffer.createFixedSize(intArrayOf(1, 28, 28, 1), DataType.FLOAT32)
+        inputBuffer.loadBuffer(byteBuffer)
+
+        val outputs = model.process(inputBuffer)
         val outputBuffer = outputs.outputFeature0AsTensorBuffer
 
-        // 3. Post-process (Translate tensor to character)
+        // 4. Post-process (Translate tensor to character)
         return translateBufferToText(outputBuffer)
     }
 
     private fun translateBufferToText(buffer: TensorBuffer): String {
         val floatArray = buffer.floatArray
         val maxIndex = floatArray.indices.maxByOrNull { floatArray[it] } ?: -1
-        
-        // Comprehensive alphanumeric mapping (EMNIST-like)
-        // 0-9: '0'-'9'
-        // 10-35: 'A'-'Z'
-        // 36-61: 'a'-'z'
+
         return when (maxIndex) {
             in 0..9 -> maxIndex.toString()
             in 10..35 -> ('A'.code + (maxIndex - 10)).toChar().toString()

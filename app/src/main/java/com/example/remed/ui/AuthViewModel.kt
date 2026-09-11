@@ -69,21 +69,36 @@ class AuthViewModel(
                 if (user != null) {
                     _isGuestMode.value = false
                     prefs.edit().putBoolean("is_guest_mode", false).apply()
-                    val profile = repository.getUserProfile(user.uid)
-                    _userProfile.value = profile
-                    if (profile?.familyId != null) {
-                        _family.value = repository.getFamily(profile.familyId)
-                    } else {
-                        _family.value = null
+
+                    // Listen to real-time UserProfile and Family updates
+                    launch {
+                        repository.userProfileFlow(user.uid).collect { profile ->
+                            _userProfile.value = profile
+                            _isAuthLoading.value = false
+                        }
+                    }
+
+                    launch {
+                        repository.userProfileFlow(user.uid).collect { profile ->
+                            val famId = profile?.familyId
+                            if (famId != null) {
+                                repository.familyFlow(famId).collect { fam ->
+                                    _family.value = fam
+                                }
+                            } else {
+                                _family.value = null
+                            }
+                        }
                     }
                 } else if (_isGuestMode.value) {
                     _userProfile.value = UserProfile(uid = GUEST_USER_ID, name = "Guest User")
                     _family.value = null
+                    _isAuthLoading.value = false
                 } else {
                     _userProfile.value = null
                     _family.value = null
+                    _isAuthLoading.value = false
                 }
-                _isAuthLoading.value = false
             }
         }
     }

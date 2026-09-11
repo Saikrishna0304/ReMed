@@ -4,7 +4,7 @@
             "outputFile": "com.example.remed.test.app-mergeDebugAndroidTestResources-33:/values-en-rIN/values-en-rIN.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\1db0ecda44759c0cba6c0874ecbba7e6\\workspace\\transformed\\jetified-ui-release\\res\\values-en-rIN\\values-en-rIN.xml",
+                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\3e109eeaea484a1e166ed02226ae86f1\\workspace\\transformed\\jetified-ui-release\\res\\values-en-rIN\\values-en-rIN.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\6cd2dcb11eed00a4a46914c810e4c4d5\\workspace\\transformed\\core-1.15.0\\res\\values-en-rIN\\values-en-rIN.xml",
+                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\572325c02baeb5fb7be2bae41de072b9\\workspace\\transformed\\core-1.15.0\\res\\values-en-rIN\\values-en-rIN.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",

@@ -52,6 +52,11 @@ android {
         }
         jniLibs {
             useLegacyPackaging = false
+            excludes += listOf(
+                "**/libimage_processing_util_jni.so",
+                "**/libtensorflowlite_jni_gms_client.so",
+                "**/libtensorflowlite_jni.so"
+            )
         }
     }
 }
@@ -92,9 +97,9 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.play.services.auth)
 
-    // TensorFlow Lite
-    implementation(libs.tensorflow.lite)
-    implementation(libs.tensorflow.lite.support)
+    // TensorFlow Lite (Google Play Services LiteRT - 100% 16 KB Page Aligned)
+    implementation(libs.play.services.tflite.java)
+    implementation(libs.play.services.tflite.support)
     implementation(libs.tensorflow.lite.metadata)
     
     // CameraX

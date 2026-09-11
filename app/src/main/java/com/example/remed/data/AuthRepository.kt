@@ -28,6 +28,32 @@ class AuthRepository {
         awaitClose { auth.removeAuthStateListener(listener) }
     }
 
+    fun userProfileFlow(uid: String): Flow<UserProfile?> = callbackFlow {
+        val listener = firestore.collection("users").document(uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(null)
+                    return@addSnapshotListener
+                }
+                val profile = snapshot?.toObject(UserProfile::class.java)
+                trySend(profile)
+            }
+        awaitClose { listener.remove() }
+    }
+
+    fun familyFlow(familyId: String): Flow<Family?> = callbackFlow {
+        val listener = firestore.collection("families").document(familyId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    trySend(null)
+                    return@addSnapshotListener
+                }
+                val family = snapshot?.toObject(Family::class.java)
+                trySend(family)
+            }
+        awaitClose { listener.remove() }
+    }
+
     suspend fun getUserProfile(uid: String): UserProfile? {
         return try {
             firestore.collection("users").document(uid).get().await().toObject(UserProfile::class.java)

@@ -75,6 +75,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
 
     private lateinit var medicationViewModel: MedicationViewModel
+    private var stepViewModel: StepViewModel? = null
 
     private val requestCameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
         if (isGranted) {
@@ -84,7 +85,7 @@ class MainActivity : ComponentActivity() {
 
     private val requestActivityRecognitionPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
         if (isGranted) {
-            // Activity recognition permission granted
+            stepViewModel?.startListening()
         }
     }
 
@@ -211,7 +212,8 @@ class MainActivity : ComponentActivity() {
                         } else {
                             medicationViewModel = viewModel(factory = factory)
                             val waterViewModel: WaterViewModel = viewModel(factory = factory)
-                            val stepViewModel: StepViewModel = viewModel(factory = factory)
+                            val stepVM: StepViewModel = viewModel(factory = factory)
+                            stepViewModel = stepVM
                             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                             val scope = rememberCoroutineScope()
 
@@ -222,7 +224,7 @@ class MainActivity : ComponentActivity() {
                                     authViewModel = authViewModel,
                                     medViewModel = medicationViewModel,
                                     waterViewModel = waterViewModel,
-                                    stepViewModel = stepViewModel,
+                                    stepViewModel = stepVM,
                                     onScanPrescription = { currentScreen = "scanner" },
                                     onSelectFromGallery = { selectFromGallery.launch("image/*") },
                                     drawerState = drawerState,
@@ -243,6 +245,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        stepViewModel?.startListening()
     }
 }
 
