@@ -144,4 +144,4 @@ Medication reminders use exact alarms and can schedule a follow-up notification 
 
 ## License
 
-No license file is currently included in the repository.
+This project is licensed under the [GNU General Public License v3.0](file:///K:/Codeing/Projects/ReMed/GIT/app/LICENCE). See the license file for details.
