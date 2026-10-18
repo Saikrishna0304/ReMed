@@ -4,7 +4,7 @@
             "outputFile": "com.example.remed.app-mergeDebugResources-81:/values-watch-v21/values-watch-v21.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\2d58b6e139924946db98d91abc7e04fd\\workspace\\transformed\\appcompat-1.2.0\\res\\values-watch-v21\\values-watch-v21.xml",
+                    "source": "C:\\Users\\Krishna\\.gradle\\caches\\8.13\\transforms\\a3816d0de8dfa87eb91fd340b40c56e6\\transformed\\appcompat-1.2.0\\res\\values-watch-v21\\values-watch-v21.xml",
                     "from": {
                         "startLines": "2,6,10",
                         "startColumns": "4,4,4",

@@ -4,24 +4,7 @@
             "outputFile": "com.example.remed.test.app-mergeDebugAndroidTestResources-33:/values-is/values-is.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\572325c02baeb5fb7be2bae41de072b9\\workspace\\transformed\\core-1.15.0\\res\\values-is\\values-is.xml",
-                    "from": {
-                        "startLines": "2,3,4,5,6,7,8,9",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "55,150,257,354,454,557,661,772",
-                        "endColumns": "94,106,96,99,102,103,110,100",
-                        "endOffsets": "145,252,349,449,552,656,767,868"
-                    },
-                    "to": {
-                        "startLines": "2,3,4,5,6,7,8,23",
-                        "startColumns": "4,4,4,4,4,4,4,4",
-                        "startOffsets": "105,200,307,404,504,607,711,1990",
-                        "endColumns": "94,106,96,99,102,103,110,100",
-                        "endOffsets": "195,302,399,499,602,706,817,2086"
-                    }
-                },
-                {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\3e109eeaea484a1e166ed02226ae86f1\\workspace\\transformed\\jetified-ui-release\\res\\values-is\\values-is.xml",
+                    "source": "C:\\Users\\Krishna\\.gradle\\caches\\8.13\\transforms\\84b7a370a9e8b3ee61dd060b5a09a918\\transformed\\jetified-ui-release\\res\\values-is\\values-is.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
@@ -35,6 +18,23 @@
                         "startOffsets": "822,913,994,1093,1192,1277,1357,1452,1541,1623,1691,1759,1837,1920,2091,2168,2236",
                         "endColumns": "90,80,98,98,84,79,94,88,81,67,67,77,82,69,76,67,119",
                         "endOffsets": "908,989,1088,1187,1272,1352,1447,1536,1618,1686,1754,1832,1915,1985,2163,2231,2351"
+                    }
+                },
+                {
+                    "source": "C:\\Users\\Krishna\\.gradle\\caches\\8.13\\transforms\\101c595fdcf28d6d3cf5e88d63b4b457\\transformed\\core-1.15.0\\res\\values-is\\values-is.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,150,257,354,454,557,661,772",
+                        "endColumns": "94,106,96,99,102,103,110,100",
+                        "endOffsets": "145,252,349,449,552,656,767,868"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,23",
+                        "startColumns": "4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,200,307,404,504,607,711,1990",
+                        "endColumns": "94,106,96,99,102,103,110,100",
+                        "endOffsets": "195,302,399,499,602,706,817,2086"
                     }
                 }
             ]

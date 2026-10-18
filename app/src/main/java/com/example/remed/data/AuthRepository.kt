@@ -62,12 +62,22 @@ class AuthRepository {
         }
     }
 
-    suspend fun createUserProfile(profile: UserProfile) {
-        firestore.collection("users").document(profile.uid).set(profile).await()
+    suspend fun createUserProfile(profile: UserProfile): Boolean {
+        return try {
+            firestore.collection("users").document(profile.uid).set(profile).await()
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
-    suspend fun updateUserProfile(profile: UserProfile) {
-        firestore.collection("users").document(profile.uid).set(profile).await()
+    suspend fun updateUserProfile(profile: UserProfile): Boolean {
+        return try {
+            firestore.collection("users").document(profile.uid).set(profile).await()
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     suspend fun getFamily(familyId: String): Family? {
@@ -78,35 +88,46 @@ class AuthRepository {
         }
     }
 
-    suspend fun createFamily(family: Family) {
-        firestore.collection("families").document(family.id).set(family).await()
-        // Update user's familyId and role
-        currentUser?.uid?.let { uid ->
-            firestore.collection("users").document(uid).update(
-                mapOf(
-                    "familyId" to family.id,
-                    "role" to "parent"
-                )
-            ).await()
+    suspend fun createFamily(family: Family): Boolean {
+        return try {
+            firestore.collection("families").document(family.id).set(family).await()
+            currentUser?.uid?.let { uid ->
+                firestore.collection("users").document(uid).update(
+                    mapOf(
+                        "familyId" to family.id,
+                        "role" to "parent"
+                    )
+                ).await()
+            }
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
-    suspend fun joinFamily(joinCode: String) {
-        val family = firestore.collection("families")
-            .whereEqualTo("joinCode", joinCode)
-            .get()
-            .await()
-            .documents
-            .firstOrNull()
-            ?.toObject(Family::class.java)
+    suspend fun joinFamily(joinCode: String): Boolean {
+        return try {
+            val family = firestore.collection("families")
+                .whereEqualTo("joinCode", joinCode)
+                .get()
+                .await()
+                .documents
+                .firstOrNull()
+                ?.toObject(Family::class.java)
 
-        if (family != null) {
-            val uid = currentUser?.uid ?: return
-            val updatedMembers = family.memberIds.toMutableList().apply { 
-                if (!contains(uid)) add(uid) 
+            if (family != null) {
+                val uid = currentUser?.uid ?: return false
+                val updatedMembers = family.memberIds.toMutableList().apply { 
+                    if (!contains(uid)) add(uid) 
+                }
+                firestore.collection("families").document(family.id).update("memberIds", updatedMembers).await()
+                firestore.collection("users").document(uid).update("familyId", family.id).await()
+                true
+            } else {
+                false
             }
-            firestore.collection("families").document(family.id).update("memberIds", updatedMembers).await()
-            firestore.collection("users").document(uid).update("familyId", family.id).await()
+        } catch (e: Exception) {
+            false
         }
     }
 

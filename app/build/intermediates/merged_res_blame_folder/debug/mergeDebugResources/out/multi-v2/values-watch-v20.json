@@ -4,7 +4,7 @@
             "outputFile": "com.example.remed.app-mergeDebugResources-81:/values-watch-v20/values-watch-v20.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\f051dcce50800d86256c2ebb451dbe54\\workspace\\transformed\\jetified-core-splashscreen-1.0.1\\res\\values-watch-v20\\values-watch-v20.xml",
+                    "source": "C:\\Users\\Krishna\\.gradle\\caches\\8.13\\transforms\\38d4d0554098a2a44471adb4cb566004\\transformed\\jetified-core-splashscreen-1.0.1\\res\\values-watch-v20\\values-watch-v20.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\ac4feb8cb4be8f5a4c7a9cffc9a9e6cb\\workspace\\transformed\\jetified-play-services-auth-22.0.0\\res\\values-watch-v20\\values.xml",
+                    "source": "C:\\Users\\Krishna\\.gradle\\caches\\8.13\\transforms\\bfc18e0c03b729721dc28c213aea52fd\\transformed\\jetified-play-services-auth-22.0.0\\res\\values-watch-v20\\values.xml",
                     "from": {
                         "startLines": "4,5,6,7,8,9,10,11",
                         "startColumns": "0,0,0,0,0,0,0,0",
@@ -38,7 +38,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\2d58b6e139924946db98d91abc7e04fd\\workspace\\transformed\\appcompat-1.2.0\\res\\values-watch-v20\\values-watch-v20.xml",
+                    "source": "C:\\Users\\Krishna\\.gradle\\caches\\8.13\\transforms\\a3816d0de8dfa87eb91fd340b40c56e6\\transformed\\appcompat-1.2.0\\res\\values-watch-v20\\values-watch-v20.xml",
                     "from": {
                         "startLines": "2,5,8",
                         "startColumns": "4,4,4",

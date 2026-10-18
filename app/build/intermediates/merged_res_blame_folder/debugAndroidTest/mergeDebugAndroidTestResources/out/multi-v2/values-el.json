@@ -4,7 +4,7 @@
             "outputFile": "com.example.remed.test.app-mergeDebugAndroidTestResources-33:/values-el/values-el.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\572325c02baeb5fb7be2bae41de072b9\\workspace\\transformed\\core-1.15.0\\res\\values-el\\values-el.xml",
+                    "source": "C:\\Users\\Krishna\\.gradle\\caches\\8.13\\transforms\\101c595fdcf28d6d3cf5e88d63b4b457\\transformed\\core-1.15.0\\res\\values-el\\values-el.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
@@ -21,7 +21,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\saikr\\.gradle\\caches\\9.3.1\\transforms\\3e109eeaea484a1e166ed02226ae86f1\\workspace\\transformed\\jetified-ui-release\\res\\values-el\\values-el.xml",
+                    "source": "C:\\Users\\Krishna\\.gradle\\caches\\8.13\\transforms\\84b7a370a9e8b3ee61dd060b5a09a918\\transformed\\jetified-ui-release\\res\\values-el\\values-el.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
